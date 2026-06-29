@@ -4,39 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio - Apuntec</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
 </head>
 <body>
 
-<span class="flotante flotante-1" aria-hidden="true">📚</span>
-<span class="flotante flotante-2" aria-hidden="true">✏️</span>
-<span class="flotante flotante-3" aria-hidden="true">⭐</span>
-<span class="flotante flotante-4" aria-hidden="true">🎓</span>
-
-<div class="container" style="max-width: 420px;">
-    <div class="badge" aria-hidden="true">🏠</div>
-
-    <div class="spiral" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+<div class="topbar">
+    <h1>📚 Apuntec</h1>
+    <div class="nav-links">
+        {% if id_curso %}
+            <a href="/curso/{{ id_curso }}">Mi curso</a>
+        {% endif %}
+        <a class="logout" href="/logout">Cerrar sesión</a>
     </div>
-
-    <div class="titulo-wrap">
-        <h2 class="titulo">¡Hola, {{ nombre }}!</h2>
-        <p class="subtitulo">Ya estás dentro de Apuntec</p>
-    </div>
-
-    <p class="enlace-secundario" style="margin-top: 0;">
-        Tu rol: <strong>{{ rol }}</strong>
-    </p>
-
-    <p class="subtitulo" style="text-align: center; margin: 18px 0;">
-        Acá pronto vas a poder subir, buscar y guardar apuntes. 📒
-    </p>
-
-    <a href="/logout" class="btn-enviar" style="text-decoration: none; text-align: center;">
-        Cerrar sesión
-    </a>
 </div>
 
+<div class="wrapper">
+    <div class="card">
+        <h2>¡Hola, {{ nombre }}!</h2>
+        <p>Tu rol actual: <strong>{{ rol }}</strong></p>
+        {% if id_curso %}
+            <p>Ya formás parte de un curso. Entrá para ver materias y apuntes.</p>
+            <a href="/curso/{{ id_curso }}" class="btn btn-celeste">Ir a mi curso</a>
+        {% else %}
+            <p>Todavía no pertenecés a ningún curso. Podés crear uno abajo.</p>
+        {% endif %}
+    </div>
+
+    {% if not id_curso %}
+    <div class="card">
+        <h2>Crear tu propio curso</h2>
+        <p>Si creás un curso te convertís en <strong>moderador</strong> y podés agregarle materias.</p>
+        <form id="formCurso">
+            <div class="form-row">
+                <div class="campo">
+                    <label for="anio">Año</label>
+                    <input type="number" id="anio" name="anio" placeholder="Ej: 5" required>
+                </div>
+                <div class="campo">
+                    <label for="division">División</label>
+                    <input type="text" id="division" name="division" placeholder="Ej: A" required>
+                </div>
+                <button type="submit" class="btn btn-amarillo">Crear curso</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
 </body>
 </html>

@@ -4,7 +4,9 @@ USE apuntes_db
 CREATE TABLE Curso(
     id INT AUTO_INCREMENT PRIMARY KEY,
     anio INT NOT NULL,
-    division VARCHAR(10) NOT NULL
+    division VARCHAR(10) NOT NULL,
+    id_creador INT,
+    FOREIGN KEY (id_creador) REFERENCES Usuario(id)
 );
 
 CREATE TABLE Profesor(
@@ -24,7 +26,6 @@ CREATE TABLE Materia (
 CREATE TABLE Usuario (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
     rol ENUM('alumno', 'admin', 'moderador') DEFAULT 'alumno',
     id_curso INT,

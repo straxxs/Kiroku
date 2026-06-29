@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - Apuntec</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+</head>
+<body>
+
+<div class="topbar">
+    <h1>🛠️ Panel de Administración</h1>
+    <div class="nav-links">
+        <a href="/home">Inicio</a>
+        <a class="logout" href="/logout">Cerrar sesión</a>
+    </div>
+</div>
+
+<div class="wrapper">
+
+    <div class="card">
+        <h2>Usuarios</h2>
+        <table>
+            <thead><tr><th>ID</th><th>Nombre</th><th>Rol</th><th>Curso</th><th>Acciones</th></tr></thead>
+            <tbody id="tablaUsuarios">
+                <tr><td colspan="5" class="vacio">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Todos los cursos</h2>
+        <table>
+            <thead><tr><th>ID</th><th>Año</th><th>División</th><th>Creador</th><th>Acciones</th></tr></thead>
+            <tbody id="tablaCursos">
+                <tr><td colspan="5" class="vacio">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

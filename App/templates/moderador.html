@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Moderador - Apuntec</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+</head>
+<body>
+
+<div class="topbar">
+    <h1>📒 Mi Curso</h1>
+    <a class="logout" href="/logout">Cerrar sesión</a>
+</div>
+
+<div class="wrapper">
+
+    <div class="card">
+        <h2>Datos de mi curso</h2>
+        <div id="infoCurso"><p class="vacio">Cargando...</p></div>
+        <form id="formEditar" style="display:none; margin-top:14px;">
+            <div class="form-row">
+                <div class="campo">
+                    <label for="editAnio">Año</label>
+                    <input type="number" id="editAnio" name="anio" required>
+                </div>
+                <div class="campo">
+                    <label for="editDivision">División</label>
+                    <input type="text" id="editDivision" name="division" required>
+                </div>
+                <button type="submit" class="btn btn-amarillo">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Materias de mi curso</h2>
+        <form id="formMateria">
+            <div class="form-row">
+                <div class="campo">
+                    <label for="nombreMateria">Nombre de la materia</label>
+                    <input type="text" id="nombreMateria" name="nombre" placeholder="Ej: Matemática" required>
+                </div>
+                <button type="submit" class="btn btn-amarillo">Agregar materia</button>
+            </div>
+        </form>
+        <table style="margin-top:16px;">
+            <thead><tr><th>Materia</th><th>Profesor</th><th>Acciones</th></tr></thead>
+            <tbody id="tablaMaterias">
+                <tr><td colspan="3" class="vacio">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/moderador.js') }}"></script>
+</body>
+</html>

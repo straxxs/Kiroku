@@ -1,17 +1,15 @@
 document.getElementById("loginForm").addEventListener("submit", function (e) {
     e.preventDefault();
-
-    const formData = new FormData(this);
-
-    fetch("/login", {
-        method: "POST",
-        body: formData
-    })
+    fetch("/login", { method: "POST", body: new FormData(this) })
         .then(res => res.json())
         .then(data => {
             alert(data.mensaje);
             if (data.ok) {
-                window.location.href = "/home";
+                if (data.rol === "admin") {
+                    window.location.href = "/admin";
+                } else {
+                    window.location.href = "/home";
+                }
             }
         })
         .catch(() => alert("Hubo un error de conexión."));
