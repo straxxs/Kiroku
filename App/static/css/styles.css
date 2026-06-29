@@ -1,0 +1,278 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Quicksand:wght@400;500;600;700&display=swap');
+
+:root {
+    --celeste: #4FC3E8;
+    --celeste-dark: #1E9BC4;
+    --amarillo: #FFCB3D;
+    --amarillo-dark: #F2A900;
+    --verde: #4CB87D;
+    --verde-dark: #2E9763;
+    --crema: #FFFAF0;
+    --tinta: #28344A;
+    --tinta-soft: #5B6B86;
+    --rojo-margen: #F0848C;
+    --blanco: #FFFFFF;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    overflow-x: hidden;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Quicksand', sans-serif;
+    background-color: var(--crema);
+    background-image:
+        radial-gradient(circle at 8% 12%, rgba(79, 195, 232, 0.35), transparent 40%),
+        radial-gradient(circle at 92% 18%, rgba(255, 203, 61, 0.35), transparent 38%),
+        radial-gradient(circle at 12% 90%, rgba(76, 184, 125, 0.3), transparent 40%),
+        radial-gradient(circle at 90% 88%, rgba(79, 195, 232, 0.25), transparent 38%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 16px;
+    position: relative;
+}
+
+/* Iconitos flotantes de utiles escolares, solo decoracion */
+.flotante {
+    position: absolute;
+    font-size: 38px;
+    opacity: 0.18;
+    user-select: none;
+    pointer-events: none;
+    animation: flotar 6s ease-in-out infinite;
+}
+.flotante-1 { top: 8%;  left: 7%;  font-size: 34px; animation-delay: 0s; }
+.flotante-2 { top: 14%; right: 8%; font-size: 40px; animation-delay: 1.2s; }
+.flotante-3 { bottom: 10%; left: 9%; font-size: 36px; animation-delay: 2.1s; }
+.flotante-4 { bottom: 14%; right: 7%; font-size: 32px; animation-delay: 0.6s; }
+
+@keyframes flotar {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-12px) rotate(6deg); }
+}
+
+/* Tarjeta tipo hoja de cuaderno */
+.container {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    background-color: var(--blanco);
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 30px,
+        rgba(79, 195, 232, 0.08) 30px,
+        rgba(79, 195, 232, 0.08) 32px
+    );
+    border-radius: 24px;
+    padding: 58px 28px 30px;
+    box-shadow:
+        0 16px 40px rgba(40, 52, 74, 0.16),
+        0 4px 10px rgba(40, 52, 74, 0.08);
+}
+
+/* Renglon rojo de margen, como en una hoja de carpeta */
+.container::before {
+    content: "";
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 15px;
+    width: 2px;
+    background: var(--rojo-margen);
+    opacity: 0.3;
+}
+
+/* Medalla / placa con los 3 colores del cole */
+.badge {
+    position: absolute;
+    top: -34px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: var(--blanco);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    box-shadow:
+        0 0 0 4px var(--celeste),
+        0 0 0 8px var(--blanco),
+        0 0 0 12px var(--celeste),
+        0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+/* Espiral de cuaderno */
+.spiral {
+    display: flex;
+    justify-content: center;
+    gap: 9px;
+    margin: 10px 0 20px;
+}
+.spiral span {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--crema);
+    box-shadow:
+        inset 0 0 0 2px #c7ccd6,
+        0 2px 3px rgba(0, 0, 0, 0.12);
+}
+
+.titulo-wrap {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.titulo {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 25px;
+    color: var(--amarillo-dark);
+    margin: 0 0 4px;
+}
+
+.subrayado {
+    display: block;
+    margin: 0 auto 8px;
+}
+
+.subtitulo {
+    font-size: 13px;
+    color: var(--tinta-soft);
+    margin: 0;
+}
+
+form {
+    margin: 0;
+}
+
+.campo {
+    margin-bottom: 18px;
+    position: relative;
+}
+
+.campo label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--celeste-dark);
+    margin-bottom: 6px;
+}
+
+.campo input {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid #E2E6ED;
+    background: transparent;
+    padding: 8px 4px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--tinta);
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.campo input::placeholder {
+    color: #B7BFCC;
+    font-weight: 500;
+}
+
+.campo input:focus {
+    outline: none;
+    border-bottom-color: var(--celeste-dark);
+    background: rgba(79, 195, 232, 0.07);
+}
+
+.btn-enviar {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--amarillo), var(--amarillo-dark));
+    color: var(--tinta);
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--verde-dark);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-enviar:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--verde-dark);
+}
+
+.btn-enviar:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--verde-dark);
+}
+
+.btn-enviar:focus-visible {
+    outline: 3px solid var(--celeste-dark);
+    outline-offset: 2px;
+}
+
+.enlace-secundario {
+    text-align: center;
+    margin: 22px 0 0;
+    font-size: 13.5px;
+    color: var(--tinta-soft);
+}
+
+.enlace-secundario a {
+    color: var(--celeste-dark);
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 2px solid var(--amarillo);
+    padding-bottom: 1px;
+}
+
+.enlace-secundario a:hover {
+    color: var(--verde-dark);
+    border-bottom-color: var(--verde);
+}
+
+.enlace-secundario a:focus-visible {
+    outline: 2px solid var(--celeste-dark);
+    outline-offset: 2px;
+}
+
+@media (max-width: 380px) {
+    .container {
+        padding: 50px 18px 24px;
+    }
+    .badge {
+        width: 58px;
+        height: 58px;
+        font-size: 24px;
+        top: -28px;
+    }
+    .flotante {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .flotante {
+        animation: none;
+    }
+    .btn-enviar {
+        transition: none;
+    }
+}

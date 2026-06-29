@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio - Apuntec</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+<span class="flotante flotante-1" aria-hidden="true">📚</span>
+<span class="flotante flotante-2" aria-hidden="true">✏️</span>
+<span class="flotante flotante-3" aria-hidden="true">⭐</span>
+<span class="flotante flotante-4" aria-hidden="true">🎓</span>
+
+<div class="container" style="max-width: 420px;">
+    <div class="badge" aria-hidden="true">🏠</div>
+
+    <div class="spiral" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="titulo-wrap">
+        <h2 class="titulo">¡Hola, {{ nombre }}!</h2>
+        <p class="subtitulo">Ya estás dentro de Apuntec</p>
+    </div>
+
+    <p class="enlace-secundario" style="margin-top: 0;">
+        Tu rol: <strong>{{ rol }}</strong>
+    </p>
+
+    <p class="subtitulo" style="text-align: center; margin: 18px 0;">
+        Acá pronto vas a poder subir, buscar y guardar apuntes. 📒
+    </p>
+
+    <a href="/logout" class="btn-enviar" style="text-decoration: none; text-align: center;">
+        Cerrar sesión
+    </a>
+</div>
+
+</body>
+</html>

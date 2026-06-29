@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+<span class="flotante flotante-1" aria-hidden="true">✏️</span>
+<span class="flotante flotante-2" aria-hidden="true">📐</span>
+<span class="flotante flotante-3" aria-hidden="true">🍎</span>
+<span class="flotante flotante-4" aria-hidden="true">⭐</span>
+
+<div class="container">
+    <div class="badge" aria-hidden="true">🎓</div>
+
+    <div class="spiral" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="titulo-wrap">
+        <h2 class="titulo">¡Hola de nuevo!</h2>
+        <p class="subtitulo">Ingresá tus datos para entrar al cole</p>
+    </div>
+
+    <form id="loginForm">
+        <div class="campo">
+            <label for="nombre">Usuario</label>
+            <input type="text" id="nombre" name="nombre" placeholder="tu_usuario" required>
+        </div>
+        <div class="campo">
+            <label for="contraseña">Contraseña</label>
+            <input type="password" id="contraseña" name="contraseña" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-enviar">Ingresar</button>
+    </form>
+
+    <p class="enlace-secundario">¿No tenés cuenta? <a href="/registro">Creala acá</a></p>
+</div>
+
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>
