@@ -6,7 +6,6 @@ CREATE TABLE Curso(
     anio INT NOT NULL,
     division VARCHAR(25) NOT NULL,
     id_creador INT,
-    FOREIGN KEY (id_creador) REFERENCES Usuario(id)
 );
 
 CREATE TABLE Profesor(
@@ -25,8 +24,9 @@ CREATE TABLE Materia (
 
 CREATE TABLE Usuario (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
+    nombre VARCHAR(100) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
+    avatar VARCHAR(255),
     rol ENUM('alumno', 'admin', 'moderador') DEFAULT 'alumno',
     id_curso INT,
     FOREIGN KEY (id_curso) REFERENCES Curso(id)
@@ -69,3 +69,5 @@ CREATE TABLE Calificacion (
     FOREIGN KEY (id_alumno) REFERENCES Usuario(id),
     FOREIGN KEY (id_apunte) REFERENCES Apunte(id)
 );
+
+ALTER TABLE curso ADD FOREIGN KEY (id_creador) REFERENCES Usuario(id);
