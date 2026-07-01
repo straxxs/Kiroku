@@ -1,4 +1,6 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from werkzeug.utils import secure_filename
 from modulos.auth import login, registrar_usuario
 from modulos.cursos import (
     crear_curso, editar_curso, listar_cursos, eliminar_curso,
@@ -9,11 +11,32 @@ from modulos.materias import (
     crear_materia, editar_materia, listar_materias_por_curso,
     eliminar_materia, obtener_materia,
 )
-from modulos.usuarios import listar_usuarios, eliminar_usuario
+from modulos.usuarios import (
+    listar_usuarios, eliminar_usuario,
+    obtener_usuario, actualizar_perfil,
+)
+from modulos.apuntes import (
+    crear_apunte, agregar_archivo_apunte, listar_apuntes_por_materia,
+    obtener_apunte, eliminar_apunte,
+)
 
 
 app = Flask(__name__)
 app.secret_key = "mitin_2026"
+
+# ---------- Config de subida de archivos ----------
+UPLOAD_APUNTES = os.path.join(app.static_folder, "uploads", "apuntes")
+UPLOAD_AVATARES = os.path.join(app.static_folder, "uploads", "avatares")
+os.makedirs(UPLOAD_APUNTES, exist_ok=True)
+os.makedirs(UPLOAD_AVATARES, exist_ok=True)
+
+EXT_APUNTES = {"pdf", "png", "jpg", "jpeg", "docx", "doc", "txt", "pptx"}
+EXT_AVATAR = {"png", "jpg", "jpeg", "webp", "gif"}
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB máx
+
+
+def extension_ok(nombre, permitidas):
+    return "." in nombre and nombre.rsplit(".", 1)[1].lower() in permitidas
 
 
 # ---------- Helpers ----------
@@ -26,10 +49,18 @@ def requiere_admin():
 
 
 def es_mi_curso(id_curso):
+    """True si es admin o moderador de ESE curso (puede gestionar)."""
     if session.get("rol") == "admin":
         return True
     if session.get("rol") != "moderador":
         return False
+    return str(session.get("id_curso")) == str(id_curso)
+
+
+def puede_ver_materia(id_curso):
+    """Admin ve todo; el resto solo su propio curso."""
+    if session.get("rol") == "admin":
+        return True
     return str(session.get("id_curso")) == str(id_curso)
 
 
@@ -107,7 +138,6 @@ def pagina_curso(id_curso):
     curso = obtener_curso(id_curso)
     if not curso:
         return "El curso no existe", 404
-    # ¿Puede gestionar este curso? (moderador de este curso o admin)
     puede_gestionar = es_mi_curso(id_curso)
     return render_template(
         "curso.html",
@@ -115,6 +145,7 @@ def pagina_curso(id_curso):
         puede_gestionar=puede_gestionar,
         rol=session.get("rol"),
     )
+
 
 @app.route("/materia/<int:id_materia>")
 def pagina_materia(id_materia):
@@ -125,8 +156,7 @@ def pagina_materia(id_materia):
     if not materia:
         return "La materia no existe", 404
 
-    # El usuario debe pertenecer al curso de la materia (o ser admin)
-    if session.get("rol") != "admin" and str(session.get("id_curso")) != str(materia["id_curso"]):
+    if not puede_ver_materia(materia["id_curso"]):
         return "No tenés acceso a esta materia", 403
 
     curso = obtener_curso(materia["id_curso"])
@@ -138,6 +168,41 @@ def pagina_materia(id_materia):
         puede_gestionar=puede_gestionar,
         rol=session.get("rol"),
     )
+
+
+# ====================== PERFIL ======================
+
+@app.route("/perfil")
+def pagina_perfil():
+    if not requiere_login():
+        return redirect(url_for("login_route"))
+    usuario = obtener_usuario(session["id_usuario"])
+    return render_template("perfil.html", usuario=usuario, rol=session.get("rol"))
+
+
+@app.route("/perfil/actualizar", methods=["POST"])
+def perfil_actualizar():
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+
+    nombre = request.form.get("nombre")
+    avatar_ruta = None
+
+    archivo = request.files.get("avatar")
+    if archivo and archivo.filename:
+        if not extension_ok(archivo.filename, EXT_AVATAR):
+            return jsonify({"ok": False, "mensaje": "Formato de imagen no válido"}), 400
+        nombre_seguro = secure_filename(f"user{session['id_usuario']}_{archivo.filename}")
+        archivo.save(os.path.join(UPLOAD_AVATARES, nombre_seguro))
+        avatar_ruta = f"uploads/avatares/{nombre_seguro}"
+
+    if actualizar_perfil(session["id_usuario"], nombre, avatar_ruta):
+        if nombre and nombre.strip():
+            session["nombre"] = nombre.strip()
+        return jsonify({"ok": True, "mensaje": "Perfil actualizado"})
+    return jsonify({"ok": False, "mensaje": "No se pudo actualizar (¿nombre repetido?)"})
+
+
 # ====================== CURSOS (API) ======================
 
 @app.route("/cursos", methods=["GET"])
@@ -145,6 +210,7 @@ def cursos_listar():
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
     return jsonify({"ok": True, "cursos": listar_cursos()})
+
 
 @app.route("/cursos/unirse", methods=["POST"])
 def cursos_unirse():
@@ -154,24 +220,30 @@ def cursos_unirse():
         return jsonify({"ok": False, "mensaje": "Ya pertenecés a un curso. Salí primero."}), 400
 
     id_curso = request.form.get("id_curso")
-    if not id_curso:
-        return jsonify({"ok": False, "mensaje": "Falta el código del curso"}), 400
+    if not id_curso or not id_curso.isdigit():
+        return jsonify({"ok": False, "mensaje": "Código de curso inválido"}), 400
+
+    if not obtener_curso(int(id_curso)):
+        return jsonify({"ok": False, "mensaje": "Ese curso no existe"}), 404
 
     if unir_usuario_a_curso(session["id_usuario"], id_curso):
         session["id_curso"] = int(id_curso)
         return jsonify({"ok": True, "mensaje": "¡Te uniste al curso!", "id": int(id_curso)})
-    return jsonify({"ok": False, "mensaje": "No se pudo unir (¿el código es correcto?)"})
+    return jsonify({"ok": False, "mensaje": "No se pudo unir"})
+
 
 @app.route("/cursos/salir", methods=["POST"])
 def cursos_salir():
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    if session.get("rol") == "admin":
+        return jsonify({"ok": False, "mensaje": "El admin no puede salir de un curso"}), 400
     if not session.get("id_curso"):
         return jsonify({"ok": False, "mensaje": "No estás en ningún curso"}), 400
 
     if salir_de_curso(session["id_usuario"]):
         session["id_curso"] = None
-        session["rol"] = "alumno" if session.get("rol") != "admin" else "admin"
+        session["rol"] = "alumno"
         return jsonify({"ok": True, "mensaje": "Saliste del curso"})
     return jsonify({"ok": False, "mensaje": "No se pudo salir del curso"})
 
@@ -303,6 +375,80 @@ def materias_eliminar(id_materia):
     if eliminar_materia(id_materia):
         return jsonify({"ok": True, "mensaje": "Materia eliminada"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
+
+
+# ====================== APUNTES (API) ======================
+
+@app.route("/materias/<int:id_materia>/apuntes", methods=["GET"])
+def apuntes_por_materia(id_materia):
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    materia = obtener_materia(id_materia)
+    if not materia:
+        return jsonify({"ok": False, "mensaje": "La materia no existe"}), 404
+    if not puede_ver_materia(materia["id_curso"]):
+        return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
+
+    apuntes = listar_apuntes_por_materia(id_materia)
+    return jsonify({
+        "ok": True,
+        "apuntes": apuntes,
+        "id_usuario": session["id_usuario"],
+        "puede_gestionar": es_mi_curso(materia["id_curso"]),
+    })
+
+
+@app.route("/apuntes/crear", methods=["POST"])
+def apuntes_crear():
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+
+    id_materia = request.form.get("id_materia")
+    materia = obtener_materia(id_materia) if id_materia else None
+    if not materia:
+        return jsonify({"ok": False, "mensaje": "Materia inválida"}), 404
+    if not puede_ver_materia(materia["id_curso"]):
+        return jsonify({"ok": False, "mensaje": "No pertenecés a este curso"}), 403
+
+    descripcion = request.form.get("descripcion", "")
+    archivo = request.files.get("archivo")
+
+    if not archivo or not archivo.filename:
+        return jsonify({"ok": False, "mensaje": "Tenés que subir un archivo"}), 400
+    if not extension_ok(archivo.filename, EXT_APUNTES):
+        return jsonify({"ok": False, "mensaje": "Tipo de archivo no permitido"}), 400
+
+    id_apunte = crear_apunte(
+        descripcion, session["id_usuario"],
+        materia["id_curso"], id_materia,
+    )
+    if not id_apunte:
+        return jsonify({"ok": False, "mensaje": "Error al crear el apunte"}), 500
+
+    nombre_seguro = secure_filename(f"apunte{id_apunte}_{archivo.filename}")
+    archivo.save(os.path.join(UPLOAD_APUNTES, nombre_seguro))
+    tipo = archivo.filename.rsplit(".", 1)[1].lower()
+    agregar_archivo_apunte(id_apunte, f"uploads/apuntes/{nombre_seguro}", tipo)
+
+    return jsonify({"ok": True, "mensaje": "¡Apunte subido!", "id": id_apunte})
+
+
+@app.route("/apuntes/eliminar/<int:id_apunte>", methods=["POST"])
+def apuntes_eliminar(id_apunte):
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    apunte = obtener_apunte(id_apunte)
+    if not apunte:
+        return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
+
+    es_autor = apunte["id_usuario_creador"] == session["id_usuario"]
+    if not (es_autor or es_mi_curso(apunte["id_curso"])):
+        return jsonify({"ok": False, "mensaje": "No podés borrar este apunte"}), 403
+
+    if eliminar_apunte(id_apunte):
+        return jsonify({"ok": True, "mensaje": "Apunte eliminado"})
+    return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
+
 
 # ====================== ADMIN (API) ======================
 

@@ -11,6 +11,7 @@
 <div class="topbar">
     <h1>📒 {{ curso.anio }}° {{ curso.division }}</h1>
     <div class="nav-links">
+        <a href="/perfil">Mi perfil</a>
         <a href="/home">Inicio</a>
         {% if rol == 'admin' %}<a href="/admin">Admin</a>{% endif %}
         <a class="logout" href="/logout">Cerrar sesión</a>

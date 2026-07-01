@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi perfil - Apuntec</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
+</head>
+<body>
+
+<div class="topbar">
+    <h1>👤 Mi perfil</h1>
+    <div class="nav-links">
+        <a href="/home">Inicio</a>
+        <a class="logout" href="/logout">Cerrar sesión</a>
+    </div>
+</div>
+
+<div class="wrapper">
+    <div class="card">
+        <h2>Datos de la cuenta</h2>
+        <div style="text-align:center; margin-bottom:16px;">
+            <img id="avatarPreview"
+                 src="{{ url_for('static', filename=usuario.avatar) if usuario.avatar else url_for('static', filename='img/avatar-default.png') }}"
+                 alt="Avatar"
+                 style="width:110px;height:110px;border-radius:50%;object-fit:cover;
+                        box-shadow:0 0 0 4px var(--celeste);">
+        </div>
+
+        <form id="formPerfil" enctype="multipart/form-data">
+            <div class="campo">
+                <label for="nombre">Nombre de usuario</label>
+                <input type="text" id="nombre" name="nombre" value="{{ usuario.nombre }}" required>
+            </div>
+            <div class="campo">
+                <label for="avatar">Cambiar avatar</label>
+                <input type="file" id="avatar" name="avatar" accept="image/*">
+            </div>
+            <button type="submit" class="btn btn-amarillo">Guardar cambios</button>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<script>
+// Previsualizar avatar antes de subir
+document.getElementById("avatar").addEventListener("change", function () {
+    if (this.files && this.files[0]) {
+        document.getElementById("avatarPreview").src = URL.createObjectURL(this.files[0]);
+    }
+});
+
+document.getElementById("formPerfil").addEventListener("submit", function (e) {
+    e.preventDefault();
+    fetch("/perfil/actualizar", { method: "POST", body: new FormData(this) })
+        .then(res => res.json())
+        .then(data => {
+            mostrarToast(data.mensaje, data.ok ? "ok" : "error");
+            if (data.ok) setTimeout(() => location.reload(), 800);
+        })
+        .catch(() => mostrarToast("Error de conexión", "error"));
+});
+</script>
+</body>
+</html>

@@ -6,13 +6,15 @@
     <title>{{ materia.nombre }} - Apuntec</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
 </head>
-<body>
+<body data-id-materia="{{ materia.id }}"
+      data-puede-gestionar="{{ 'true' if puede_gestionar else 'false' }}">
 
 <div class="topbar">
     <h1>📖 {{ materia.nombre }}</h1>
     <div class="nav-links">
         <a href="/home">Inicio</a>
         <a href="/curso/{{ curso.id }}">Volver al curso</a>
+        <a href="/perfil">Mi perfil</a>
         <a class="logout" href="/logout">Cerrar sesión</a>
     </div>
 </div>
@@ -26,13 +28,30 @@
     </div>
 
     <div class="card">
-        <h2>Apuntes</h2>
-        <p class="vacio">Todavía no hay apuntes en esta materia. 📄</p>
-        <!-- Acá van a ir los apuntes cuando implementemos esa parte -->
+        <h2>Subir un apunte</h2>
+        <form id="formApunte" enctype="multipart/form-data">
+            <div class="campo">
+                <label for="descripcion">Descripción (opcional)</label>
+                <input type="text" id="descripcion" name="descripcion"
+                       placeholder="Ej: Resumen del primer parcial">
+            </div>
+            <div class="form-row">
+                <div class="campo">
+                    <label for="archivo">Archivo</label>
+                    <input type="file" id="archivo" name="archivo" required>
+                </div>
+                <button type="submit" class="btn btn-amarillo">Subir apunte</button>
+            </div>
+        </form>
     </div>
 
+    <div class="card">
+        <h2>Apuntes de la materia</h2>
+        <div id="listaApuntes"><p class="vacio">Cargando...</p></div>
+    </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/apuntes.js') }}"></script>
 </body>
 </html>
