@@ -109,7 +109,7 @@ def listar_alumnos_curso(id_curso):
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         cursor.execute("""
-            SELECT id, nombre, rol
+            SELECT id, nombre, rol, avatar
             FROM Usuario
             WHERE id_curso = %s
             ORDER BY rol DESC, nombre

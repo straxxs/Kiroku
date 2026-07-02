@@ -16,7 +16,12 @@ function cargarUsuarios() {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td>${u.id}</td>
-                    <td>${u.nombre}</td>
+                    <td>
+                        <div class="autor-linea">
+                            ${htmlAvatar(u.nombre, u.avatar, "avatar-chico")}
+                            <span>${u.nombre}</span>
+                        </div>
+                    </td>
                     <td><span class="badge-rol rol-${u.rol}">${u.rol}</span></td>
                     <td>${curso}</td>
                     <td class="acciones">

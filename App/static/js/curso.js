@@ -61,7 +61,10 @@ function cargarAlumnos() {
             data.alumnos.forEach(a => {
                 const li = document.createElement("li");
                 li.innerHTML = `
-                    <span>${a.nombre}</span>
+                    <span class="autor-linea" style="margin-bottom:0;">
+                        ${htmlAvatar(a.nombre, a.avatar, "avatar-chico")}
+                        <span>${a.nombre}</span>
+                    </span>
                     <span class="badge-rol rol-${a.rol}">${a.rol}</span>`;
                 lista.appendChild(li);
             });

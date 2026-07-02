@@ -10,12 +10,22 @@
     data-puede-gestionar="{{ 'true' if puede_gestionar else 'false' }}">
 
 <div class="topbar">
-    <h1>📖 {{ materia.nombre }}</h1>
-    <div class="nav-links">
-        <a href="/home">Inicio</a>
-        <a href="/curso/{{ curso.id }}">Volver al curso</a>
-        <a href="/perfil">Mi perfil</a>
-        <a class="logout" href="/logout">Cerrar sesión</a>
+    <h1>📚 Apuntec</h1>
+    <div class="perfil-menu">
+        <img id="perfilAvatar" class="perfil-avatar"
+            src="{{ url_for('static', filename=session_avatar) }}" alt="Mi avatar">
+
+        <div id="perfilDropdown" class="dropdown-menu">
+            <div class="dropdown-header">{{ nombre }}</div>
+            <a href="/perfil">Mi perfil</a>
+            {% if session_id_curso %}
+                <a href="/curso/{{ session_id_curso }}">Mi curso</a>
+            {% endif %}
+            <a href="/home">Inicio</a>
+            {% if rol == 'admin' %}<a href="/admin">Panel admin</a>{% endif %}
+            <hr>
+            <a href="/logout" class="item-logout">Cerrar sesión</a>
+        </div>
     </div>
 </div>
 
@@ -27,21 +37,27 @@
         <p>Curso: {{ curso.anio }}° {{ curso.division }}</p>
     </div>
 
-    <div class="card">
+        <div class="card">
         <h2>Subir un apunte</h2>
         <form id="formApunte" enctype="multipart/form-data">
             <div class="campo">
                 <label for="descripcion">Descripción (opcional)</label>
                 <input type="text" id="descripcion" name="descripcion"
-                       placeholder="Ej: Resumen del primer parcial">
+                    placeholder="Ej: Resumen del primer parcial">
             </div>
-            <div class="form-row">
-                <div class="campo">
-                    <label for="archivo">Archivo</label>
-                    <input type="file" id="archivo" name="archivo" required>
+
+            <div class="campo">
+                <label>Archivo</label>
+                <!-- Input real oculto -->
+                <input type="file" id="archivo" name="archivo" required hidden>
+                <!-- Botón bonito -->
+                <div class="file-drop" id="fileDrop">
+                    <span class="file-icono">📎</span>
+                    <span class="file-texto" id="fileTexto">Elegí un archivo o arrastralo acá</span>
                 </div>
-                <button type="submit" class="btn btn-amarillo">Subir apunte</button>
             </div>
+
+            <button type="submit" class="btn btn-amarillo">Subir apunte</button>
         </form>
     </div>
 
@@ -51,6 +67,8 @@
     </div>
 </div>
 
+<script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/topbar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
 <script src="{{ url_for('static', filename='js/apuntes.js') }}"></script>
 </body>

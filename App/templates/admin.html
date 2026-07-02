@@ -9,11 +9,19 @@
 <body>
 
 <div class="topbar">
-    <h1>🛠️ Panel de Administración</h1>
-    <div class="nav-links">
-        <a href="/perfil">Mi perfil</a>
-        <a href="/home">Inicio</a>
-        <a class="logout" href="/logout">Cerrar sesión</a>
+    <h1>📚 Apuntec</h1>
+    <div class="perfil-menu">
+        <img id="perfilAvatar" class="perfil-avatar"
+            src="{{ url_for('static', filename=session_avatar) }}" alt="Mi avatar">
+
+        <div id="perfilDropdown" class="dropdown-menu">
+            <div class="dropdown-header">{{ nombre }}</div>
+            <a href="/perfil">Mi perfil</a>
+            <a href="/home">Inicio</a>
+            {% if rol == 'admin' %}<a href="/admin">Panel admin</a>{% endif %}
+            <hr>
+            <a href="/logout" class="item-logout">Cerrar sesión</a>
+        </div>
     </div>
 </div>
 
@@ -40,6 +48,8 @@
     </div>
 
 </div>
+<script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/topbar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>

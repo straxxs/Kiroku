@@ -63,6 +63,16 @@ def puede_ver_materia(id_curso):
         return True
     return str(session.get("id_curso")) == str(id_curso)
 
+@app.context_processor
+def inyectar_usuario():
+    if "id_usuario" not in session:
+        return {}
+    return {
+        "session_avatar": session.get("avatar") or "uploads/avatares/no_avatar.png",
+        "nombre": session.get("nombre"),
+        "rol": session.get("rol"),
+        "session_id_curso": session.get("id_curso"),
+    }
 
 # ====================== AUTH ======================
 
@@ -93,6 +103,7 @@ def login_route():
             session["nombre"] = usuario["nombre"]
             session["rol"] = usuario["rol"]
             session["id_curso"] = usuario["id_curso"]
+            session["avatar"] = usuario.get("avatar")
             return jsonify({
                 "ok": True,
                 "mensaje": f"¡Bienvenido {usuario['nombre']}!",
@@ -201,6 +212,8 @@ def perfil_actualizar():
     if actualizar_perfil(session["id_usuario"], nombre, avatar_ruta):
         if nombre and nombre.strip():
             session["nombre"] = nombre.strip()
+        if avatar_ruta:
+            session["avatar"] = avatar_ruta
         return jsonify({"ok": True, "mensaje": "Perfil actualizado"})
     return jsonify({"ok": False, "mensaje": "No se pudo actualizar el perfil, es posible que el nombre se repita"})
 
