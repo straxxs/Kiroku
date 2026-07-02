@@ -180,28 +180,29 @@ def pagina_perfil():
     return render_template("perfil.html", usuario=usuario, rol=session.get("rol"))
 
 
+# Lista de avatares válidos (los 10 predefinidos)
+AVATARES_VALIDOS = [f"avatar{i}.png" for i in range(0, 9)]
+
+
 @app.route("/perfil/actualizar", methods=["POST"])
 def perfil_actualizar():
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
 
     nombre = request.form.get("nombre")
-    avatar_ruta = None
+    avatar = request.form.get("avatar")  # ej: "avatar3.png"
 
-    archivo = request.files.get("avatar")
-    if archivo and archivo.filename:
-        if not extension_ok(archivo.filename, EXT_AVATAR):
-            return jsonify({"ok": False, "mensaje": "Formato de imagen no válido"}), 400
-        nombre_seguro = secure_filename(f"user{session['id_usuario']}_{archivo.filename}")
-        archivo.save(os.path.join(UPLOAD_AVATARES, nombre_seguro))
-        avatar_ruta = f"uploads/avatares/{nombre_seguro}"
+    avatar_ruta = None
+    if avatar:
+        if avatar not in AVATARES_VALIDOS:
+            return jsonify({"ok": False, "mensaje": "Avatar no válido"}), 400
+        avatar_ruta = f"uploads/avatares/{avatar}"
 
     if actualizar_perfil(session["id_usuario"], nombre, avatar_ruta):
         if nombre and nombre.strip():
             session["nombre"] = nombre.strip()
         return jsonify({"ok": True, "mensaje": "Perfil actualizado"})
-    return jsonify({"ok": False, "mensaje": "No se pudo actualizar (¿nombre repetido?)"})
-
+    return jsonify({"ok": False, "mensaje": "No se pudo actualizar el perfil, es posible que el nombre se repita"})
 
 # ====================== CURSOS (API) ======================
 

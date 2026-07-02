@@ -10,7 +10,7 @@ def listar_usuarios():
     try:
         cursor.execute("""
             SELECT u.id, u.nombre, u.rol, u.id_curso, u.avatar,
-                   c.anio, c.division
+                c.anio, c.division
             FROM Usuario u
             LEFT JOIN Curso c ON u.id_curso = c.id
             ORDER BY u.nombre
@@ -55,7 +55,7 @@ def obtener_usuario(id_usuario):
     try:
         cursor.execute("""
             SELECT u.id, u.nombre, u.rol, u.id_curso, u.avatar,
-                   c.anio, c.division
+                c.anio, c.division
             FROM Usuario u
             LEFT JOIN Curso c ON u.id_curso = c.id
             WHERE u.id = %s

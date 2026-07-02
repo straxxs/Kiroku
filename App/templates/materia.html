@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
 </head>
 <body data-id-materia="{{ materia.id }}"
-      data-puede-gestionar="{{ 'true' if puede_gestionar else 'false' }}">
+    data-puede-gestionar="{{ 'true' if puede_gestionar else 'false' }}">
 
 <div class="topbar">
     <h1>📖 {{ materia.nombre }}</h1>

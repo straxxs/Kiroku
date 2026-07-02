@@ -259,3 +259,37 @@ th {
     .toast { transform: translateY(-40px); }
     .toast-visible { transform: translateY(0); }
 }
+
+/* ---------- Grilla de avatares ---------- */
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.avatar-opcion {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+    box-shadow: 0 0 0 3px transparent;
+    transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.avatar-opcion:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px var(--amarillo);
+}
+
+.avatar-opcion.avatar-seleccionado {
+    box-shadow: 0 0 0 4px var(--celeste-dark);
+    transform: scale(1.05);
+}
+
+@media (max-width: 480px) {
+    .avatar-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
