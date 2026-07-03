@@ -9,7 +9,7 @@
 <body data-avatar-actual="{{ usuario.avatar.split('/')[-1] if usuario.avatar else '' }}">
 
 <div class="topbar">
-    <h1>📚 Apuntec</h1>
+    <a href="/home" class="apuntec-btn"><h1>📚 Apuntti</h1></a>
     <div class="perfil-menu">
         <img id="perfilAvatar" class="perfil-avatar"
             src="{{ url_for('static', filename=session_avatar) }}" alt="Mi avatar">
@@ -47,12 +47,12 @@
 
             <label style="margin-top:8px;">Elegí tu avatar</label>
             <div class="avatar-grid" id="avatarGrid">
-                {% for i in range(0, 9) %}
+                {% for i in range(0, 10) %}
                     {% set nombre_archivo = 'avatar' ~ i ~ '.png' %}
                     <img src="{{ url_for('static', filename='uploads/avatares/' ~ nombre_archivo) }}"
-                         class="avatar-opcion"
-                         data-avatar="{{ nombre_archivo }}"
-                         alt="Avatar {{ i }}">
+                        class="avatar-opcion"
+                        data-avatar="{{ nombre_archivo }}"
+                        alt="Avatar {{ i }}">
                 {% endfor %}
             </div>
 

@@ -23,7 +23,13 @@ function htmlPreview(f) {
                      onclick="abrirLightbox('${url}')">
                 <div class="preview-footer">
                     <span class="tipo">${tipo}</span>
-                    <a href="${url}" download>⬇️</a>
+                    <a href="${url}">
+                    <button class="Btn">
+                        <svg class="svgIcon" viewBox="0 0 384 512" height="10px" xmlns="http://www.w3.org/2000/svg"><path d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path></svg>
+                        <span class="icon2"></span>
+                        <span class="tooltip">Download</span>
+                    </button>
+                    </a>
                 </div>
             </div>`;
     }
@@ -35,7 +41,9 @@ function htmlPreview(f) {
                 <iframe class="preview-pdf" src="${url}#toolbar=0"></iframe>
                 <div class="preview-footer">
                     <span class="tipo">pdf</span>
-                    <a href="${url}" target="_blank">Ver completo ↗</a>
+                    <a href="${url}" target="_blank">
+                    <button class="Btn2"><strong>Ver archivo</strong></button>
+                    </a>
                 </div>
             </div>`;
     }
@@ -47,7 +55,13 @@ function htmlPreview(f) {
                 <video class="preview-video" controls src="${url}"></video>
                 <div class="preview-footer">
                     <span class="tipo">${tipo}</span>
-                    <a href="${url}" download>⬇️</a>
+                    <a href="${url}">
+                    <button class="Btn">
+                        <svg class="svgIcon" viewBox="0 0 384 512" height="10px" xmlns="http://www.w3.org/2000/svg"><path d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path></svg>
+                        <span class="icon2"></span>
+                        <span class="tooltip">Download</span>
+                    </button>
+                    </a>
                 </div>
             </div>`;
     }
@@ -59,7 +73,13 @@ function htmlPreview(f) {
             <div class="preview-generico">
                 <div class="icono">${icono}</div>
                 <div class="nombre">Archivo ${tipo}</div>
-                <a href="${url}" download class="btn btn-celeste btn-chico">Descargar</a>
+                <a href="${url}" download>
+                <button class="Btn">
+                    <svg class="svgIcon" viewBox="0 0 384 512" height="10px" xmlns="http://www.w3.org/2000/svg"><path d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path></svg>
+                    <span class="icon2"></span>
+                    <span class="tooltip">Download</span>
+                </button>
+                </a>
             </div>
             <div class="preview-footer">
                 <span class="tipo">${tipo}</span>

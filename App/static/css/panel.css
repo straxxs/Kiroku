@@ -139,14 +139,14 @@ input:focus, select:focus {
 .btn-amarillo {
     background: linear-gradient(135deg, var(--amarillo), var(--amarillo-dark));
     color: var(--tinta);
-    box-shadow: 3px 3px 0 var(--verde-dark);
+    box-shadow: 3px 3px 0 var(--tinta);
 }
 .btn-amarillo:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--verde-dark); }
 
 .btn-celeste {
     background: linear-gradient(135deg, var(--celeste), var(--celeste-dark));
     color: var(--blanco);
-    box-shadow: 3px 3px 0 var(--verde-dark);
+    box-shadow: 3px 3px 0 var(--tinta);
 }
 .btn-celeste:hover { transform: translate(-1px, -1px); }
 
@@ -301,6 +301,14 @@ th {
     z-index: 1000;
 }
 
+/*Apuntec-Inicio*/
+.apuntec-btn {
+    color: var(--blanco);
+    text-decoration: none;
+}
+.apuntec-btn:hover{
+    color: var(--celeste-dark);
+}
 /* Avatar en el header */
 .perfil-menu {
     position: relative;
@@ -500,11 +508,124 @@ th {
     border-color: var(--verde);
     background: rgba(76, 184, 125, 0.10);
 }
-.file-icono { font-size: 26px; }
 .file-texto {
+    display: flex;
     font-weight: 600;
     color: var(--tinta-soft);
     font-size: 14px;
     word-break: break-all;
 }
 .file-drop.tiene-archivo .file-texto { color: var(--verde-dark); }
+
+/* ==================== BOTON DE DESCARGAR ==================== */
+
+.Btn {
+  width: 25px;
+  height: 25px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--amarillo-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition-duration: .3s;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.11);
+}
+
+.svgIcon {
+  fill: rgb(12, 12, 12);
+}
+
+.icon2 {
+  width: 12px;
+  height: 3.5px;
+  border-bottom: 1.5px solid rgb(12, 12, 12);
+  border-left: 1.5px solid rgb(12, 12, 12);
+  border-right: 1.5px solid rgb(12, 12, 12);
+}
+
+.tooltip {
+  position: absolute;
+  right: -105px;
+  opacity: 0;
+  background-color: rgb(12, 12, 12);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition-duration: .2s;
+  pointer-events: none;
+  letter-spacing: 0.5px;
+}
+
+.tooltip::before {
+  position: absolute;
+  content: "";
+  width: 10px;
+  height: 10px;
+  background-color: rgb(12, 12, 12);
+  background-size: 1000%;
+  background-position: center;
+  transform: rotate(45deg);
+  left: -5%;
+  transition-duration: .3s;
+}
+
+.Btn:hover .tooltip {
+  opacity: 1;
+  transition-duration: .3s;
+}
+
+.Btn:hover {
+  background-color: rgb(20, 70, 100);
+  transition-duration: .3s;
+}
+
+.Btn:hover .icon2 {
+  border-bottom: 1.5px solid rgb(255, 255, 50);
+  border-left: 1.5px solid rgb(255, 255, 50);
+  border-right: 1.5px solid rgb(255, 255, 50);
+}
+
+.Btn:hover .svgIcon {
+  fill: rgb(255, 255, 50);
+  animation: slide-in-top 0.6s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+}
+
+@keyframes slide-in-top {
+  0% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+}
+
+/* ==================== BOTON DE PDF ==================== */
+
+.Btn2 {
+ padding-left: 5px;
+ padding-right: 5px;
+ padding-bottom: 3px;
+ padding-top: 3px;
+ border-radius: 9px;
+ background: linear-gradient(135deg, var(--amarillo), var(--amarillo-dark));
+ border: none;
+ font-family: inherit;
+ text-align: center;
+ cursor: pointer;   
+}
+
+.Btn2:hover {
+ background: rgb(20, 70, 100);
+ color: rgb(230, 230, 20);
+}
+

@@ -10,7 +10,7 @@
     data-puede-gestionar="{{ 'true' if puede_gestionar else 'false' }}">
 
 <div class="topbar">
-    <h1>📚 Apuntec</h1>
+    <a href="/home" class="apuntec-btn"><h1>📚 Apuntti</h1></a>
     <div class="perfil-menu">
         <img id="perfilAvatar" class="perfil-avatar"
             src="{{ url_for('static', filename=session_avatar) }}" alt="Mi avatar">
@@ -52,11 +52,10 @@
                 <input type="file" id="archivo" name="archivo" required hidden>
                 <!-- Botón bonito -->
                 <div class="file-drop" id="fileDrop">
-                    <span class="file-icono">📎</span>
                     <span class="file-texto" id="fileTexto">Elegí un archivo o arrastralo acá</span>
                 </div>
             </div>
-
+            <p></p>
             <button type="submit" class="btn btn-amarillo">Subir apunte</button>
         </form>
     </div>

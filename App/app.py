@@ -31,7 +31,7 @@ os.makedirs(UPLOAD_APUNTES, exist_ok=True)
 os.makedirs(UPLOAD_AVATARES, exist_ok=True)
 
 EXT_APUNTES = {"pdf", "png", "jpg", "jpeg", "docx", "doc", "txt", "pptx"}
-EXT_AVATAR = {"png", "jpg", "jpeg", "webp", "gif"}
+EXT_AVATAR = {"png"}
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB máx
 
 
@@ -192,7 +192,7 @@ def pagina_perfil():
 
 
 # Lista de avatares válidos (los 10 predefinidos)
-AVATARES_VALIDOS = [f"avatar{i}.png" for i in range(0, 9)]
+AVATARES_VALIDOS = [f"avatar{i}.png" for i in range(0, 10)]
 
 
 @app.route("/perfil/actualizar", methods=["POST"])
