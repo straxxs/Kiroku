@@ -1,3 +1,4 @@
+import os
 import pymysql
 from db.conexion import obtener_conexion
 
@@ -62,7 +63,6 @@ def listar_apuntes_por_materia(id_materia):
         """, (id_materia,))
         apuntes = cursor.fetchall()
 
-        # Traemos los archivos de cada apunte
         for ap in apuntes:
             cursor.execute("""
                 SELECT id, ruta, tipo FROM Archivo_Apunte WHERE id_apunte = %s
@@ -96,17 +96,34 @@ def obtener_apunte(id_apunte):
         conn.close()
 
 
-def eliminar_apunte(id_apunte):
+def _borrar_archivos_fisicos(rutas, carpeta_apuntes):
+    """Borra del disco los archivos dados. 'rutas' son como 'uploads/apuntes/x.png'."""
+    for ruta in rutas:
+        nombre = os.path.basename(ruta)  # x.png
+        ruta_completa = os.path.join(carpeta_apuntes, nombre)
+        if os.path.exists(ruta_completa):
+            try:
+                os.remove(ruta_completa)
+            except OSError as e:
+                print(f"No se pudo borrar el archivo {ruta_completa}: {e}")
+
+
+def eliminar_apunte(id_apunte, carpeta_apuntes):
     conn = obtener_conexion()
     if not conn:
         return False
-    cursor = conn.cursor()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
-        # Borramos primero los archivos hijos (FK)
+        # Obtenemos las rutas para borrarlas del disco después
+        cursor.execute("SELECT ruta FROM Archivo_Apunte WHERE id_apunte = %s", (id_apunte,))
+        rutas = [fila["ruta"] for fila in cursor.fetchall()]
+
         cursor.execute("DELETE FROM Archivo_Apunte WHERE id_apunte = %s", (id_apunte,))
         cursor.execute("DELETE FROM Apunte WHERE id = %s", (id_apunte,))
         conn.commit()
-        return cursor.rowcount > 0
+
+        _borrar_archivos_fisicos(rutas, carpeta_apuntes)
+        return True
     except Exception as e:
         print(f"Error al eliminar apunte: {e}")
         conn.rollback()

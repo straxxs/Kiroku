@@ -26,14 +26,11 @@ app.secret_key = "mitin_2026"
 
 # ---------- Config de subida de archivos ----------
 UPLOAD_APUNTES = os.path.join(app.static_folder, "uploads", "apuntes")
-UPLOAD_AVATARES = os.path.join(app.static_folder, "uploads", "avatares")
 os.makedirs(UPLOAD_APUNTES, exist_ok=True)
-os.makedirs(UPLOAD_AVATARES, exist_ok=True)
+os.makedirs(os.path.join(app.static_folder, "uploads", "avatares"), exist_ok=True)
 
 EXT_APUNTES = {"pdf", "png", "jpg", "jpeg", "docx", "doc", "txt", "pptx"}
-EXT_AVATAR = {"png"}
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB máx
-
 
 def extension_ok(nombre, permitidas):
     return "." in nombre and nombre.rsplit(".", 1)[1].lower() in permitidas
@@ -326,7 +323,7 @@ def cursos_eliminar(id_curso):
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
     if not requiere_admin():
         return jsonify({"ok": False, "mensaje": "Solo el admin puede borrar cursos"}), 403
-    if eliminar_curso(id_curso):
+    if eliminar_curso(id_curso, UPLOAD_APUNTES):
         return jsonify({"ok": True, "mensaje": "Curso eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
@@ -386,7 +383,7 @@ def materias_eliminar(id_materia):
     if not es_mi_curso(materia["id_curso"]):
         return jsonify({"ok": False, "mensaje": "No podés borrar materias de otro curso"}), 403
 
-    if eliminar_materia(id_materia):
+    if eliminar_materia(id_materia, UPLOAD_APUNTES):
         return jsonify({"ok": True, "mensaje": "Materia eliminada"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
@@ -459,7 +456,7 @@ def apuntes_eliminar(id_apunte):
     if not (es_autor or es_mi_curso(apunte["id_curso"])):
         return jsonify({"ok": False, "mensaje": "No podés borrar este apunte"}), 403
 
-    if eliminar_apunte(id_apunte):
+    if eliminar_apunte(id_apunte, UPLOAD_APUNTES):
         return jsonify({"ok": True, "mensaje": "Apunte eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 

@@ -328,17 +328,6 @@ th {
 }
 .perfil-avatar:hover { transform: scale(1.06); box-shadow: 0 0 0 3px var(--amarillo); }
 
-/* Avatar como iniciales (fallback) */
-.avatar-iniciales {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Baloo 2', sans-serif;
-    font-weight: 700;
-    color: #fff;
-    background: linear-gradient(135deg, var(--celeste), var(--celeste-dark));
-    user-select: none;
-}
 
 /* Dropdown */
 .dropdown-menu {
@@ -390,7 +379,6 @@ th {
     background: var(--celeste-dark);
     flex-shrink: 0;
 }
-.avatar-iniciales.avatar-chico { font-size: 14px; }
 
 .autor-linea {
     display: flex;

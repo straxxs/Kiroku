@@ -1,3 +1,4 @@
+import os
 import pymysql
 from db.conexion import obtener_conexion
 from modulos.profesores import obtener_o_crear_profesor
@@ -110,15 +111,46 @@ def obtener_materia(id_materia):
         conn.close()
 
 
-def eliminar_materia(id_materia):
+def eliminar_materia(id_materia, carpeta_apuntes):
     conn = obtener_conexion()
     if not conn:
         return False
 
-    cursor = conn.cursor()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
+        # 1. Rutas de archivos de todos los apuntes de la materia
+        cursor.execute("""
+            SELECT af.ruta
+            FROM Archivo_Apunte af
+            JOIN Apunte a ON af.id_apunte = a.id
+            WHERE a.id_materia = %s
+        """, (id_materia,))
+        rutas = [fila["ruta"] for fila in cursor.fetchall()]
+
+        # 2. Borrar archivos (BD) de esos apuntes
+        cursor.execute("""
+            DELETE af FROM Archivo_Apunte af
+            JOIN Apunte a ON af.id_apunte = a.id
+            WHERE a.id_materia = %s
+        """, (id_materia,))
+
+        # 3. Borrar apuntes de la materia
+        cursor.execute("DELETE FROM Apunte WHERE id_materia = %s", (id_materia,))
+
+        # 4. Borrar la materia
         cursor.execute("DELETE FROM Materia WHERE id = %s", (id_materia,))
         conn.commit()
+
+        # 5. Borrar archivos físicos del disco
+        for ruta in rutas:
+            nombre = os.path.basename(ruta)
+            ruta_completa = os.path.join(carpeta_apuntes, nombre)
+            if os.path.exists(ruta_completa):
+                try:
+                    os.remove(ruta_completa)
+                except OSError as e:
+                    print(f"No se pudo borrar {ruta_completa}: {e}")
+
         return cursor.rowcount > 0
     except Exception as e:
         print(f"Error al eliminar materia: {e}")

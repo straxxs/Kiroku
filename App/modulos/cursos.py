@@ -1,3 +1,4 @@
+import os
 import pymysql
 from db.conexion import obtener_conexion
 
@@ -5,6 +6,8 @@ from db.conexion import obtener_conexion
 def crear_curso(anio, division, id_creador):
     """Crea el curso, asigna el curso al usuario y lo vuelve moderador."""
     if not anio or not division:
+        return False
+    if not str(anio).isdigit():
         return False
 
     conn = obtener_conexion()
@@ -123,17 +126,57 @@ def listar_alumnos_curso(id_curso):
         conn.close()
 
 
-def eliminar_curso(id_curso):
+def eliminar_curso(id_curso, carpeta_apuntes):
     conn = obtener_conexion()
     if not conn:
         return False
 
-    cursor = conn.cursor()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
-        # Soltamos a los usuarios del curso para no romper su FK
-        cursor.execute("UPDATE Usuario SET id_curso = NULL WHERE id_curso = %s", (id_curso,))
+        # 1. Rutas de archivos de todos los apuntes del curso
+        cursor.execute("""
+            SELECT af.ruta
+            FROM Archivo_Apunte af
+            JOIN Apunte a ON af.id_apunte = a.id
+            WHERE a.id_curso = %s
+        """, (id_curso,))
+        rutas = [fila["ruta"] for fila in cursor.fetchall()]
+
+        # 2. Borrar archivos (BD)
+        cursor.execute("""
+            DELETE af FROM Archivo_Apunte af
+            JOIN Apunte a ON af.id_apunte = a.id
+            WHERE a.id_curso = %s
+        """, (id_curso,))
+
+        # 3. Borrar apuntes del curso
+        cursor.execute("DELETE FROM Apunte WHERE id_curso = %s", (id_curso,))
+
+        # 4. Borrar materias del curso
+        cursor.execute("DELETE FROM Materia WHERE id_curso = %s", (id_curso,))
+
+        # 5. Soltar usuarios: sacarles el curso y bajar moderadores a alumno
+        cursor.execute("""
+            UPDATE Usuario
+            SET id_curso = NULL,
+                rol = IF(rol = 'moderador', 'alumno', rol)
+            WHERE id_curso = %s
+        """, (id_curso,))
+
+        # 6. Borrar el curso
         cursor.execute("DELETE FROM Curso WHERE id = %s", (id_curso,))
         conn.commit()
+
+        # 7. Borrar archivos físicos
+        for ruta in rutas:
+            nombre = os.path.basename(ruta)
+            ruta_completa = os.path.join(carpeta_apuntes, nombre)
+            if os.path.exists(ruta_completa):
+                try:
+                    os.remove(ruta_completa)
+                except OSError as e:
+                    print(f"No se pudo borrar {ruta_completa}: {e}")
+
         return cursor.rowcount > 0
     except Exception as e:
         print(f"Error al eliminar curso: {e}")
