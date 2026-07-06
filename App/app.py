@@ -13,10 +13,11 @@ from modulos.materias import (
 )
 from modulos.usuarios import (
     listar_usuarios, eliminar_usuario,
-    obtener_usuario, actualizar_perfil,
+    obtener_usuario, actualizar_perfil, ascender_a_moderador
 )
 from modulos.apuntes import (
     crear_apunte, agregar_archivo_apunte, listar_apuntes_por_materia,
+    listar_apuntes_pendientes, cambiar_estado_apunte,
     obtener_apunte, eliminar_apunte,
 )
 
@@ -327,6 +328,20 @@ def cursos_eliminar(id_curso):
         return jsonify({"ok": True, "mensaje": "Curso eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
+@app.route("/cursos/<int:id_curso>/ascender", methods=["POST"])
+def curso_ascender(id_curso):
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    if not es_mi_curso(id_curso):
+        return jsonify({"ok": False, "mensaje": "No gestionás este curso"}), 403
+
+    id_destino = request.form.get("id_usuario")
+    if not id_destino:
+        return jsonify({"ok": False, "mensaje": "Falta el usuario"}), 400
+
+    if ascender_a_moderador(id_destino, id_curso):
+        return jsonify({"ok": True, "mensaje": "¡Ahora es moderador!"})
+    return jsonify({"ok": False, "mensaje": "No se pudo ascender (¿ya es moderador?)"})
 
 # ====================== MATERIAS (API) ======================
 
@@ -400,12 +415,14 @@ def apuntes_por_materia(id_materia):
     if not puede_ver_materia(materia["id_curso"]):
         return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
 
-    apuntes = listar_apuntes_por_materia(id_materia)
+    # Los que gestionan (moderador/admin) ven todos; el alumno solo aprobados
+    gestiona = es_mi_curso(materia["id_curso"])
+    apuntes = listar_apuntes_por_materia(id_materia, solo_aprobados=not gestiona)
     return jsonify({
         "ok": True,
         "apuntes": apuntes,
         "id_usuario": session["id_usuario"],
-        "puede_gestionar": es_mi_curso(materia["id_curso"]),
+        "puede_gestionar": gestiona,
     })
 
 
@@ -421,18 +438,19 @@ def apuntes_crear():
     if not puede_ver_materia(materia["id_curso"]):
         return jsonify({"ok": False, "mensaje": "No pertenecés a este curso"}), 403
 
+    titulo = request.form.get("titulo", "").strip()
     descripcion = request.form.get("descripcion", "")
     archivo = request.files.get("archivo")
 
+    if not titulo:
+        return jsonify({"ok": False, "mensaje": "El título es obligatorio"}), 400
     if not archivo or not archivo.filename:
         return jsonify({"ok": False, "mensaje": "Tenés que subir un archivo"}), 400
     if not extension_ok(archivo.filename, EXT_APUNTES):
         return jsonify({"ok": False, "mensaje": "Tipo de archivo no permitido"}), 400
 
-    id_apunte = crear_apunte(
-        descripcion, session["id_usuario"],
-        materia["id_curso"], id_materia,
-    )
+    id_apunte = crear_apunte(titulo, descripcion, session["id_usuario"],
+                            materia["id_curso"], id_materia)
     if not id_apunte:
         return jsonify({"ok": False, "mensaje": "Error al crear el apunte"}), 500
 
@@ -441,8 +459,7 @@ def apuntes_crear():
     tipo = archivo.filename.rsplit(".", 1)[1].lower()
     agregar_archivo_apunte(id_apunte, f"uploads/apuntes/{nombre_seguro}", tipo)
 
-    return jsonify({"ok": True, "mensaje": "¡Apunte subido!", "id": id_apunte})
-
+    return jsonify({"ok": True, "mensaje": "¡Apunte subido! Queda pendiente de aprobación.", "id": id_apunte})
 
 @app.route("/apuntes/eliminar/<int:id_apunte>", methods=["POST"])
 def apuntes_eliminar(id_apunte):
@@ -460,6 +477,38 @@ def apuntes_eliminar(id_apunte):
         return jsonify({"ok": True, "mensaje": "Apunte eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
+# ====================== MODERACIÓN DE APUNTES (RF-08) ======================
+
+@app.route("/cursos/<int:id_curso>/pendientes", methods=["GET"])
+def apuntes_pendientes(id_curso):
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    if not es_mi_curso(id_curso):
+        return jsonify({"ok": False, "mensaje": "No gestionás este curso"}), 403
+    return jsonify({"ok": True, "apuntes": listar_apuntes_pendientes(id_curso)})
+
+
+@app.route("/apuntes/<int:id_apunte>/aprobar", methods=["POST"])
+def apunte_aprobar(id_apunte):
+    return _moderar_apunte(id_apunte, "aprobado")
+
+
+@app.route("/apuntes/<int:id_apunte>/rechazar", methods=["POST"])
+def apunte_rechazar(id_apunte):
+    return _moderar_apunte(id_apunte, "rechazado")
+
+
+def _moderar_apunte(id_apunte, estado):
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    apunte = obtener_apunte(id_apunte)
+    if not apunte:
+        return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
+    if not es_mi_curso(apunte["id_curso"]):
+        return jsonify({"ok": False, "mensaje": "No podés moderar este apunte"}), 403
+    if cambiar_estado_apunte(id_apunte, estado):
+        return jsonify({"ok": True, "mensaje": f"Apunte {estado}"})
+    return jsonify({"ok": False, "mensaje": "No se pudo actualizar"})
 
 # ====================== ADMIN (API) ======================
 

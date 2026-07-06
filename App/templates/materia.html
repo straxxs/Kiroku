@@ -41,21 +41,25 @@
         <h2>Subir un apunte</h2>
         <form id="formApunte" enctype="multipart/form-data">
             <div class="campo">
+                <label for="titulo">Título</label>
+                <input type="text" id="titulo" name="titulo"
+                       placeholder="Ej: Resumen unidad 1" required>
+            </div>
+            <div class="campo">
                 <label for="descripcion">Descripción (opcional)</label>
                 <input type="text" id="descripcion" name="descripcion"
-                    placeholder="Ej: Resumen del primer parcial">
+                       placeholder="Ej: Incluye ejercicios resueltos">
             </div>
 
             <div class="campo">
-                <label>Archivo</label>
-                <!-- Input real oculto -->
-                <input type="file" id="archivo" name="archivo" required hidden>
-                <!-- Botón bonito -->
+                <label>Archivos (opcional, podés subir varios)</label>
+                <input type="file" id="archivo" name="archivo" multiple hidden>
                 <div class="file-drop" id="fileDrop">
-                    <span class="file-texto" id="fileTexto">Elegí un archivo o arrastralo acá</span>
+                    <span class="file-icono">📎</span>
+                    <span class="file-texto" id="fileTexto">Elegí archivos o arrastralos acá (opcional)</span>
                 </div>
             </div>
-            <p></p>
+
             <button type="submit" class="btn btn-amarillo">Subir apunte</button>
         </form>
     </div>

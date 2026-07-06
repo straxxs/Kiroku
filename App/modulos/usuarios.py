@@ -104,3 +104,24 @@ def actualizar_perfil(id_usuario, nombre=None, avatar=None):
     finally:
         cursor.close()
         conn.close()
+
+def ascender_a_moderador(id_usuario, id_curso):
+    """Vuelve moderador a un alumno, solo si pertenece al curso indicado."""
+    conn = obtener_conexion()
+    if not conn:
+        return False
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE Usuario SET rol = 'moderador' WHERE id = %s AND id_curso = %s AND rol = 'alumno'",
+            (id_usuario, id_curso),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        print(f"Error al ascender a moderador: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()

@@ -60,12 +60,23 @@ function cargarAlumnos() {
 
             data.alumnos.forEach(a => {
                 const li = document.createElement("li");
+
+                let boton = "";
+                // Solo el que gestiona puede ascender, y solo a alumnos
+                if (PUEDE_GESTIONAR && a.rol === "alumno") {
+                    boton = `<button class="btn btn-celeste btn-chico"
+                                onclick="hacerModerador(${a.id})">Hacer moderador</button>`;
+                }
+
                 li.innerHTML = `
                     <span class="autor-linea" style="margin-bottom:0;">
                         ${htmlAvatar(a.nombre, a.avatar, "avatar-chico")}
                         <span>${a.nombre}</span>
                     </span>
-                    <span class="badge-rol rol-${a.rol}">${a.rol}</span>`;
+                    <span style="display:flex;align-items:center;gap:8px;">
+                        <span class="badge-rol rol-${a.rol}">${a.rol}</span>
+                        ${boton}
+                    </span>`;
                 lista.appendChild(li);
             });
         });
@@ -142,6 +153,18 @@ function copiarCodigo(codigo) {
         .catch(() => mostrarToast("Código del curso: " + codigo, "ok"));
 }
 
+// ---------- Ascender alumno a moderador ----------
+function hacerModerador(idUsuario) {
+    if (!confirm("¿Convertir a este alumno en moderador del curso?")) return;
+    const fd = new FormData();
+    fd.append("id_usuario", idUsuario);
+    fetch(`/cursos/${ID_CURSO}/ascender`, { method: "POST", body: fd })
+        .then(res => res.json())
+        .then(data => {
+            mostrarToast(data.mensaje, data.ok ? "ok" : "error");
+            if (data.ok) cargarAlumnos();
+        });
+}
 
 cargarMaterias();
 cargarAlumnos();

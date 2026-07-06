@@ -88,30 +88,26 @@ function htmlPreview(f) {
 }
 
 // ---------- Botón de archivo bonito ----------
+// ---------- Botón de archivo bonito (múltiples, opcional) ----------
 const fileDrop = document.getElementById("fileDrop");
 const inputArchivo = document.getElementById("archivo");
 const fileTexto = document.getElementById("fileTexto");
 
+function textoArchivos(files) {
+    if (!files || files.length === 0) return "Elegí archivos o arrastralos acá (opcional)";
+    if (files.length === 1) return files[0].name;
+    return `${files.length} archivos seleccionados`;
+}
+
 if (fileDrop && inputArchivo) {
-    // Click en la zona abre el selector
     fileDrop.addEventListener("click", () => inputArchivo.click());
 
-    // Al elegir archivo, mostrar el nombre
     inputArchivo.addEventListener("change", function () {
-        if (this.files && this.files[0]) {
-            fileTexto.textContent = this.files[0].name;
-            fileDrop.classList.add("tiene-archivo");
-        } else {
-            fileTexto.textContent = "Elegí un archivo o arrastralo acá";
-            fileDrop.classList.remove("tiene-archivo");
-        }
+        fileTexto.textContent = textoArchivos(this.files);
+        fileDrop.classList.toggle("tiene-archivo", this.files.length > 0);
     });
 
-    // Drag & drop
-    fileDrop.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        fileDrop.classList.add("tiene-archivo");
-    });
+    fileDrop.addEventListener("dragover", (e) => { e.preventDefault(); fileDrop.classList.add("tiene-archivo"); });
     fileDrop.addEventListener("dragleave", () => {
         if (!inputArchivo.files.length) fileDrop.classList.remove("tiene-archivo");
     });
@@ -119,7 +115,7 @@ if (fileDrop && inputArchivo) {
         e.preventDefault();
         if (e.dataTransfer.files.length) {
             inputArchivo.files = e.dataTransfer.files;
-            fileTexto.textContent = e.dataTransfer.files[0].name;
+            fileTexto.textContent = textoArchivos(e.dataTransfer.files);
             fileDrop.classList.add("tiene-archivo");
         }
     });
@@ -147,17 +143,20 @@ function cargarApuntes() {
                 const div = document.createElement("div");
                 div.className = "card";
                 div.style.marginBottom = "14px";
-                div.innerHTML = `
+                                div.innerHTML = `
                     <div class="autor-linea">
                         ${htmlAvatar(a.autor, a.autor_avatar, "avatar-chico")}
                         <strong>${a.autor || "Anónimo"}</strong>
+                        ${a.estado && a.estado !== 'aprobado'
+                            ? `<span class="badge-rol rol-alumno">${a.estado}</span>` : ""}
                     </div>
+                    <h3 style="margin:6px 0;color:var(--tinta);">${a.titulo || "(sin título)"}</h3>
                     <p>${a.descripcion || "<em>Sin descripción</em>"}</p>
                     <div class="preview-grid">${previews}</div>
                     <div class="acciones" style="margin-top:10px;">
                         ${puedeBorrar
                             ? `<button class="btn btn-rojo btn-chico"
-                                 onclick="borrarApunte(${a.id})">Eliminar</button>`
+                                onclick="borrarApunte(${a.id})">Eliminar</button>`
                             : ""}
                     </div>`;
                 cont.appendChild(div);
@@ -192,7 +191,7 @@ if (formApunte) {
                 mostrarToast(data.mensaje, data.ok ? "ok" : "error");
                 if (data.ok) {
                     this.reset();
-                    fileTexto.textContent = "Elegí un archivo o arrastralo acá";
+                    fileTexto.textContent = "Elegí archivos o arrastralos acá (opcional)";
                     fileDrop.classList.remove("tiene-archivo");
                     cargarApuntes();
                 }
@@ -217,5 +216,54 @@ function abrirLightbox(url) {
     lb.classList.add("abierto");
 }
 
+// ---------- Apuntes pendientes (moderación) ----------
+function cargarPendientes() {
+    if (!PUEDE_GESTIONAR) return;
+    fetch(`/cursos/${ID_CURSO}/pendientes`)
+        .then(res => res.json())
+        .then(data => {
+            const cont = document.getElementById("listaPendientes");
+            if (!cont) return;
+            cont.innerHTML = "";
+
+            if (!data.apuntes || data.apuntes.length === 0) {
+                cont.innerHTML = '<p class="vacio">No hay apuntes pendientes. 🎉</p>';
+                return;
+            }
+
+            data.apuntes.forEach(a => {
+                const archivos = (a.archivos || []).map(f =>
+                    `<a class="btn btn-celeste btn-chico" href="/static/${f.ruta}" target="_blank">Ver ${f.tipo}</a>`
+                ).join(" ");
+                const div = document.createElement("div");
+                div.className = "card";
+                div.style.marginBottom = "12px";
+                div.innerHTML = `
+                    <strong>${a.titulo}</strong> — <em>${a.materia || ""}</em><br>
+                    <span>Por ${a.autor}</span>
+                    <p>${a.descripcion || ""}</p>
+                    <div class="acciones">
+                        ${archivos}
+                        <button class="btn btn-amarillo btn-chico" onclick="aprobar(${a.id})">✅ Aprobar</button>
+                        <button class="btn btn-rojo btn-chico" onclick="rechazar(${a.id})">❌ Rechazar</button>
+                    </div>`;
+                cont.appendChild(div);
+            });
+        });
+}
+
+function aprobar(id) {
+    fetch(`/apuntes/${id}/aprobar`, { method: "POST" })
+        .then(res => res.json())
+        .then(data => { mostrarToast(data.mensaje, data.ok ? "ok" : "error"); if (data.ok) cargarPendientes(); });
+}
+
+function rechazar(id) {
+    fetch(`/apuntes/${id}/rechazar`, { method: "POST" })
+        .then(res => res.json())
+        .then(data => { mostrarToast(data.mensaje, data.ok ? "ok" : "error"); if (data.ok) cargarPendientes(); });
+}
+
+cargarPendientes();
 
 cargarApuntes();

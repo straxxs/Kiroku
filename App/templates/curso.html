@@ -58,6 +58,13 @@
         {% endif %}
     </div>
 
+    {% if puede_gestionar %}
+    <div class="card">
+        <h2>Apuntes pendientes de aprobación</h2>
+        <div id="listaPendientes"><p class="vacio">Cargando...</p></div>
+    </div>
+    {% endif %}
+    
     <!-- Materias -->
     <div class="card">
         <h2>Materias</h2>
