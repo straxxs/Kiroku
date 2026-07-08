@@ -36,8 +36,7 @@
                     {{ a.materia or 'Sin materia' }} · por {{ a.autor or 'Anónimo' }}
                 </p>
                 <p>{{ a.descripcion or '' }}</p>
-                <a href="/materia/{{ a.id_materia }}" class="btn btn-celeste btn-chico">Ir a la materia</a>
-            </div>
+                <a href="/materia/{{ a.id_materia }}#apunte-{{ a.id }}" class="btn btn-celeste btn-chico">Ver apunte</a>            </div>
             {% endfor %}
         {% else %}
             <p class="vacio">Todavía no guardaste ningún apunte. 🔖</p>

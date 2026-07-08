@@ -721,3 +721,14 @@ th {
 .estrella:hover {
     transform: scale(1.2);
 }
+
+/* ---------- Resaltado de apunte (al venir de guardados) ---------- */
+.apunte-resaltado {
+    animation: resaltar-apunte 2.5s ease;
+    box-shadow: 0 0 0 3px var(--amarillo), 0 10px 26px rgba(40, 52, 74, 0.10);
+}
+
+@keyframes resaltar-apunte {
+    0%   { box-shadow: 0 0 0 4px var(--amarillo-dark); }
+    100% { box-shadow: 0 0 0 3px transparent, 0 10px 26px rgba(40, 52, 74, 0.10); }
+}

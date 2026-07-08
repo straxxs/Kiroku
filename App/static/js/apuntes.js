@@ -162,6 +162,7 @@ function cargarApuntes() {
                 const div = document.createElement("div");
                 div.className = "card";
                 div.style.marginBottom = "14px";
+                div.id = `apunte-${a.id}`;
                 div.innerHTML = `
                     <div class="autor-linea">
                         ${htmlAvatar(a.autor, a.autor_avatar, "avatar-chico")}
@@ -189,7 +190,8 @@ function cargarApuntes() {
                     </div>`;
                 cont.appendChild(div);
             });
-            activarHoverEstrellas();   
+            activarHoverEstrellas();
+            resaltarApunteDelHash();    
         })
         .catch(() => mostrarToast("Error al cargar apuntes", "error"));
 }
@@ -245,6 +247,16 @@ function abrirLightbox(url) {
     lb.classList.add("abierto");
 }
 
+// ---------- Resaltar apunte al venir desde "Guardados" ----------
+function resaltarApunteDelHash() {
+    if (!location.hash.startsWith("#apunte-")) return;
+    const el = document.querySelector(location.hash);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("apunte-resaltado");
+    setTimeout(() => el.classList.remove("apunte-resaltado"), 2500);
+}
+
 // ---------- Estrellas ----------
 function generarEstrellas(idApunte, miCalificacion) {
     let html = `<span class="estrellas" data-apunte="${idApunte}">`;
@@ -285,27 +297,41 @@ function calificar(idApunte, estrellas) {
         .then(res => res.json())
         .then(data => {
             mostrarToast(data.mensaje, data.ok ? "ok" : "error");
-            if (data.ok) cargarApuntes();
-        });
+            if (!data.ok) return;
+
+            // Actualizar SOLO este apunte, sin recargar todo
+            const card = document.getElementById(`apunte-${idApunte}`);
+            if (!card) return;
+
+            // Pintar estrellas fijas según la nueva calificación
+            card.querySelectorAll(".estrella").forEach(e => {
+                const valor = parseInt(e.dataset.valor, 10);
+                e.classList.toggle("activa", valor <= data.mi_calificacion);
+            });
+
+            // Actualizar el promedio
+            const prom = card.querySelector(".valoracion-promedio");
+            if (prom) prom.textContent = `${data.promedio} / 5 (${data.cantidad})`;
+        })
+        .catch(() => mostrarToast("Error de conexión", "error"));
 }
 
 // ---------- Guardar ----------
 function toggleGuardar(idApunte, checkbox) {
-    const guardado = checkbox.checked;
-
-    fetch(`/apuntes/${idApunte}/guardar`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guardado })
-    })
-    .then(res => res.json())
-    .then(data => {
-        mostrarToast(data.mensaje, data.ok ? "ok" : "error");
-
-        if (!data.ok) {
-            checkbox.checked = !guardado;
-        }
-    });
+    fetch(`/apuntes/${idApunte}/guardar`, { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+            mostrarToast(data.mensaje, data.ok ? "ok" : "error");
+            if (data.ok) {
+                checkbox.checked = (data.estado === "guardado");
+            } else {
+                checkbox.checked = !checkbox.checked; // revertir
+            }
+        })
+        .catch(() => {
+            checkbox.checked = !checkbox.checked;
+            mostrarToast("Error de conexión", "error");
+        });
 }
 
 cargarApuntes();

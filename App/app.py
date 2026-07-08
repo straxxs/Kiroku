@@ -21,9 +21,9 @@ from modulos.apuntes import (
     obtener_apunte, eliminar_apunte,
 )
 from modulos.valoraciones import (
-    calificar_apunte, alternar_guardado, listar_guardados,
+    calificar_apunte, alternar_guardado, listar_guardados, obtener_promedio,
 )
-
+from modulos.busqueda import buscar_apuntes
 
 app = Flask(__name__)
 app.secret_key = "mitin_2026"
@@ -487,6 +487,20 @@ def apuntes_eliminar(id_apunte):
         return jsonify({"ok": True, "mensaje": "Apunte eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
+@app.route("/buscar", methods=["GET"])
+def buscar():
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+
+    id_curso = session.get("id_curso")
+    if not id_curso:
+        return jsonify({"ok": False, "mensaje": "No pertenecés a ningún curso", "apuntes": []})
+
+    texto = request.args.get("q", "")
+    orden = request.args.get("orden", "recientes")
+    apuntes = buscar_apuntes(id_curso, texto, orden)
+    return jsonify({"ok": True, "apuntes": apuntes})
+
 # ====================== VALORACIONES (RF-07) ======================
 
 @app.route("/apuntes/<int:id_apunte>/calificar", methods=["POST"])
@@ -505,7 +519,14 @@ def apunte_calificar(id_apunte):
         return jsonify({"ok": False, "mensaje": "Calificación inválida"}), 400
 
     if calificar_apunte(session["id_usuario"], id_apunte, estrellas):
-        return jsonify({"ok": True, "mensaje": "¡Gracias por tu valoración!"})
+        promedio, cantidad = obtener_promedio(id_apunte)
+        return jsonify({
+            "ok": True,
+            "mensaje": "¡Gracias por tu valoración!",
+            "promedio": promedio,
+            "cantidad": cantidad,
+            "mi_calificacion": estrellas,
+        })
     return jsonify({"ok": False, "mensaje": "No se pudo calificar"})
 
 
@@ -552,8 +573,17 @@ def apunte_aprobar(id_apunte):
 
 @app.route("/apuntes/<int:id_apunte>/rechazar", methods=["POST"])
 def apunte_rechazar(id_apunte):
-    return _moderar_apunte(id_apunte, "rechazado")
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    apunte = obtener_apunte(id_apunte)
+    if not apunte:
+        return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
+    if not es_mi_curso(apunte["id_curso"]):
+        return jsonify({"ok": False, "mensaje": "No podés moderar este apunte"}), 403
 
+    if eliminar_apunte(id_apunte, UPLOAD_APUNTES):
+        return jsonify({"ok": True, "mensaje": "Apunte rechazado y eliminado"})
+    return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
 def _moderar_apunte(id_apunte, estado):
     if not requiere_login():

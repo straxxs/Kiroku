@@ -76,8 +76,33 @@
         </form>
     </div>
     {% endif %}
+
+    {% if id_curso %}
+    <div class="card">
+        <h2>🔎 Buscar apuntes</h2>
+        <div class="form-row">
+            <div class="campo" style="flex:2;">
+                <label for="q">Buscar por título, alumno o materia</label>
+                <input type="text" id="q" placeholder="Ej: Matemática, resumen, Pérez...">
+            </div>
+            <div class="campo">
+                <label for="orden">Ordenar por</label>
+                <select id="orden">
+                    <option value="recientes">Más recientes</option>
+                    <option value="valorados">Mejor valorados</option>
+                </select>
+            </div>
+            <button type="button" id="btnBuscar" class="btn btn-celeste">Buscar</button>
+        </div>
+        <div id="resultadosBusqueda" style="margin-top:16px;">
+            <p class="vacio">Escribí algo o presioná Buscar para ver los apuntes de tu curso.</p>
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 
+<script src="{{ url_for('static', filename='js/busqueda.js') }}"></script>
 <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/topbar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>

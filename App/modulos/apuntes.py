@@ -182,6 +182,9 @@ def eliminar_apunte(id_apunte, carpeta_apuntes):
         cursor.execute("SELECT ruta FROM Archivo_Apunte WHERE id_apunte = %s", (id_apunte,))
         rutas = [fila["ruta"] for fila in cursor.fetchall()]
 
+        # Borrar dependencias primero (FKs)
+        cursor.execute("DELETE FROM Calificacion WHERE id_apunte = %s", (id_apunte,))
+        cursor.execute("DELETE FROM Guardado WHERE id_apunte = %s", (id_apunte,))
         cursor.execute("DELETE FROM Archivo_Apunte WHERE id_apunte = %s", (id_apunte,))
         cursor.execute("DELETE FROM Apunte WHERE id = %s", (id_apunte,))
         conn.commit()
