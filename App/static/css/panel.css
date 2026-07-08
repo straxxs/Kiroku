@@ -617,9 +617,107 @@ th {
  color: rgb(230, 230, 20);
 }
 
-/* ---------- Estrellas ---------- */
-.estrellas { display: inline-flex; gap: 2px; font-size: 22px; cursor: pointer; }
-.estrella { color: #D8DEE8; transition: color 0.12s, transform 0.12s; }
-.estrella:hover, .estrella.activa { color: var(--amarillo-dark); }
-.estrella:hover { transform: scale(1.15); }
+/* ---------- Fila de valoración (estrellas + promedio + guardar) ---------- */
+.valoracion-fila {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: var(--crema);
+    border-radius: 12px;
+    border: 1px solid #EEF1F5;
+}
 
+.valoracion-promedio {
+    color: var(--tinta-soft);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Empuja el botón de guardar al extremo derecho */
+.valoracion-fila .container {
+    margin-left: auto;
+}
+
+/* ---------- Boton Guardar ---------- */
+.container {
+  --color: rgb(230, 230, 20);
+  --size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  font-size: var(--size);
+  user-select: none;
+  fill: var(--color);
+}
+
+.container .save-regular {
+  position: absolute;
+  animation: keyframes-fill 0.5s;
+  transform-origin: top;
+}
+
+.container .save-solid {
+  position: absolute;
+  animation: keyframes-fill 0.5s;
+  display: none;
+  transform-origin: top;
+}
+
+/* ------ On check event ------ */
+.container input:checked ~ .save-regular {
+  display: none;
+}
+
+.container input:checked ~ .save-solid {
+  display: block;
+}
+
+/* ------ Hide the default checkbox ------ */
+.container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* ------ Animation ------ */
+@keyframes keyframes-fill {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scaleY(1.2);
+  }
+}
+
+/* ---------- Estrellas ---------- */
+.estrellas {
+    display: inline-flex;
+    gap: 4px;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.estrella {
+    color: #D8DEE8;                 /* apagada por defecto */
+    transition: color 0.12s ease, transform 0.12s ease;
+    text-shadow: 0 1px 1px rgba(40, 52, 74, 0.08);
+}
+
+/* Estrella "encendida" (tanto por calificación fija como por hover) */
+.estrella.activa,
+.estrella.hover-activa {
+    color: var(--amarillo-dark);
+}
+
+.estrella:hover {
+    transform: scale(1.2);
+}

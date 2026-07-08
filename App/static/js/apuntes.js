@@ -142,10 +142,22 @@ function cargarApuntes() {
 
                 const estrellas = generarEstrellas(a.id, a.mi_calificacion);
                 const btnGuardar = `
-                    <button class="btn btn-chico ${a.guardado ? 'btn-amarillo' : 'btn-celeste'}"
-                            onclick="toggleGuardar(${a.id}, this)">
-                        ${a.guardado ? '🔖 Guardado' : '🔖 Guardar'}
-                    </button>`;
+                        <label class="container">
+                            <input 
+                                type="checkbox" 
+                                ${a.guardado ? 'checked' : ''}
+                                onchange="toggleGuardar(${a.id}, this)"
+                            />
+                            
+                            <svg class="save-regular" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
+                                <path d="M0 48C0 21.5 21.5 0 48 0l0 48V441.4l130.1-92.9c8.3-6 19.6-6 27.9 0L336 441.4V48H48V0H336c26.5 0 48 21.5 48 48V488c0 9-5 17.2-13 21.3s-17.6 3.4-24.9-1.8L192 397.5 37.9 507.5c-7.3 5.2-16.9 5.9-24.9 1.8S0 497 0 488V48z"></path>
+                            </svg>
+
+                            <svg class="save-solid" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
+                                <path d="M0 48V487.7C0 501.1 10.9 512 24.3 512c5 0 9.9-1.5 14-4.4L192 400 345.7 507.6c4.1 2.9 9 4.4 14 4.4c13.4 0 24.3-10.9 24.3-24.3V48c0-26.5-21.5-48-48-48H48C21.5 0 0 21.5 0 48z"></path>
+                            </svg>
+                        </label>
+                        `;
 
                 const div = document.createElement("div");
                 div.className = "card";
@@ -160,14 +172,16 @@ function cargarApuntes() {
                     <h3 style="margin:6px 0;color:var(--tinta);">${a.titulo || "(sin título)"}</h3>
                     <p>${a.descripcion || "<em>Sin descripción</em>"}</p>
                     <div class="preview-grid">${previews}</div>
-                    <div style="margin-top:10px;">
+
+                    <div class="valoracion-fila">
                         ${estrellas}
-                        <span style="color:var(--tinta-soft);font-size:13px;">
+                        <span class="valoracion-promedio">
                             ${a.promedio} / 5 (${a.cant_calificaciones})
                         </span>
-                    </div>
-                    <div class="acciones" style="margin-top:10px;">
                         ${btnGuardar}
+                    </div>
+
+                    <div class="acciones" style="margin-top:10px;">
                         ${puedeBorrar
                             ? `<button class="btn btn-rojo btn-chico"
                                 onclick="borrarApunte(${a.id})">Eliminar</button>`
@@ -175,6 +189,7 @@ function cargarApuntes() {
                     </div>`;
                 cont.appendChild(div);
             });
+            activarHoverEstrellas();   
         })
         .catch(() => mostrarToast("Error al cargar apuntes", "error"));
 }
@@ -235,10 +250,32 @@ function generarEstrellas(idApunte, miCalificacion) {
     let html = `<span class="estrellas" data-apunte="${idApunte}">`;
     for (let i = 1; i <= 5; i++) {
         const activa = i <= miCalificacion ? "activa" : "";
-        html += `<span class="estrella ${activa}" onclick="calificar(${idApunte}, ${i})">★</span>`;
+        html += `<span class="estrella ${activa}" data-valor="${i}" title="${i} de 5"
+                    onclick="calificar(${idApunte}, ${i})">★</span>`;
     }
-    html += `</span> `;
+    html += `</span>`;
     return html;
+}
+
+// ---------- Hover de estrellas (pinta de izquierda a derecha) ----------
+function activarHoverEstrellas() {
+    document.querySelectorAll(".estrellas").forEach(grupo => {
+        const estrellas = grupo.querySelectorAll(".estrella");
+
+        estrellas.forEach(estrella => {
+            estrella.addEventListener("mouseover", () => {
+                const valor = parseInt(estrella.dataset.valor, 10);
+                estrellas.forEach(e => {
+                    e.classList.toggle("hover-activa", parseInt(e.dataset.valor, 10) <= valor);
+                });
+            });
+        });
+
+        // Al salir del grupo, se quita el hover y vuelve a mostrar la calificación fija
+        grupo.addEventListener("mouseleave", () => {
+            estrellas.forEach(e => e.classList.remove("hover-activa"));
+        });
+    });
 }
 
 function calificar(idApunte, estrellas) {
@@ -253,13 +290,22 @@ function calificar(idApunte, estrellas) {
 }
 
 // ---------- Guardar ----------
-function toggleGuardar(idApunte, btn) {
-    fetch(`/apuntes/${idApunte}/guardar`, { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-            mostrarToast(data.mensaje, data.ok ? "ok" : "error");
-            if (data.ok) cargarApuntes();
-        });
+function toggleGuardar(idApunte, checkbox) {
+    const guardado = checkbox.checked;
+
+    fetch(`/apuntes/${idApunte}/guardar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guardado })
+    })
+    .then(res => res.json())
+    .then(data => {
+        mostrarToast(data.mensaje, data.ok ? "ok" : "error");
+
+        if (!data.ok) {
+            checkbox.checked = !guardado;
+        }
+    });
 }
 
 cargarApuntes();
