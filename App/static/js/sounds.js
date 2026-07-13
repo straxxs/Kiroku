@@ -40,3 +40,25 @@ function sonidoError() {
     _playTone(300, 0.15, "sawtooth", 0.06);
     setTimeout(() => _playTone(200, 0.2, "sawtooth", 0.04), 100);
 }
+
+function sonidoHover() {
+    _playTone(600, 0.03, "sine", 0.02);
+}
+
+(function () {
+    let _lastHover = 0;
+    let _lastEl = null;
+    document.addEventListener("mouseover", function (e) {
+        const el = e.target.closest("a, button, .btn, .btn-megusta, .perfil-avatar");
+        if (!el || el === _lastEl) return;
+        _lastEl = el;
+        const now = performance.now();
+        if (now - _lastHover < 80) return;
+        _lastHover = now;
+        if (typeof sonidoHover === "function") sonidoHover();
+    });
+    document.addEventListener("mouseout", function (e) {
+        const el = e.target.closest("a, button, .btn, .btn-megusta, .perfil-avatar");
+        if (el && !el.contains(e.relatedTarget)) _lastEl = null;
+    });
+})();

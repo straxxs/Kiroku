@@ -9,14 +9,34 @@
 </head>
 <body>
 
-<span class="flotante flotante-1" aria-hidden="true">🔑</span>
-<span class="flotante flotante-2" aria-hidden="true">🔐</span>
-<span class="flotante flotante-3" aria-hidden="true">✅</span>
-<span class="flotante flotante-4" aria-hidden="true">🎉</span>
+<div class="doodles">
+    <i data-lucide="pencil" class="d1"></i>
+    <i data-lucide="file-text" class="d2"></i>
+    <i data-lucide="book-open" class="d3"></i>
+    <i data-lucide="star" class="d4"></i>
+    <i data-lucide="paperclip" class="d5"></i>
+    <i data-lucide="clipboard-list" class="d6"></i>
+    <i data-lucide="graduation-cap" class="d7"></i>
+    <i data-lucide="lightbulb" class="d8"></i>
+    <i data-lucide="book-marked" class="d9"></i>
+    <i data-lucide="palette" class="d10"></i>
+    <i data-lucide="flask-conical" class="d11"></i>
+    <i data-lucide="scissors" class="d12"></i>
+    <i data-lucide="ruler" class="d13"></i>
+    <i data-lucide="paintbrush" class="d14"></i>
+    <i data-lucide="school" class="d15"></i>
+    <i data-lucide="hash" class="d16"></i>
+    <i data-lucide="compass" class="d17"></i>
+    <i data-lucide="target" class="d18"></i>
+    <i data-lucide="feather" class="d19"></i>
+    <i data-lucide="bookmark" class="d20"></i>
+    <i data-lucide="globe" class="d21"></i>
+    <i data-lucide="atom" class="d22"></i>
+    <i data-lucide="music" class="d23"></i>
+    <i data-lucide="brain" class="d24"></i>
+</div>
 
 <div class="container">
-    <div class="badge" aria-hidden="true">🔐</div>
-
     <div class="spiral" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
     </div>
@@ -51,7 +71,10 @@
     <p class="enlace-secundario"><a href="/login">Volver al login</a></p>
 </div>
 
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 <script src="{{ url_for('static', filename='js/restablecer.js') }}"></script>
 </body>
 </html>

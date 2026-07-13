@@ -9,22 +9,30 @@
 </head>
 <body data-id-curso="{{ curso.id }}" data-puede-gestionar="{{ 'true' if puede_gestionar else 'false' }}" data-id-creador="{{ curso.id_creador }}" data-id-usuario="{{ id_usuario_actual }}">
 <div class="doodles">
-    <span class="d1">✏️</span>
-    <span class="d2">📝</span>
-    <span class="d3">📚</span>
-    <span class="d4">⭐</span>
-    <span class="d5">📎</span>
-    <span class="d6">🗒️</span>
-    <span class="d7">🎓</span>
-    <span class="d8">💡</span>
-    <span class="d9">📖</span>
-    <span class="d10">🎨</span>
-    <span class="d11">🧪</span>
-    <span class="d12">✂️</span>
-    <span class="d13">📐</span>
-    <span class="d14">🖌️</span>
-    <span class="d15">🎒</span>
-    <span class="d16">🔢</span>
+    <i data-lucide="pencil" class="d1"></i>
+    <i data-lucide="file-text" class="d2"></i>
+    <i data-lucide="book-open" class="d3"></i>
+    <i data-lucide="star" class="d4"></i>
+    <i data-lucide="paperclip" class="d5"></i>
+    <i data-lucide="clipboard-list" class="d6"></i>
+    <i data-lucide="graduation-cap" class="d7"></i>
+    <i data-lucide="lightbulb" class="d8"></i>
+    <i data-lucide="book-marked" class="d9"></i>
+    <i data-lucide="palette" class="d10"></i>
+    <i data-lucide="flask-conical" class="d11"></i>
+    <i data-lucide="scissors" class="d12"></i>
+    <i data-lucide="ruler" class="d13"></i>
+    <i data-lucide="paintbrush" class="d14"></i>
+    <i data-lucide="school" class="d15"></i>
+    <i data-lucide="hash" class="d16"></i>
+    <i data-lucide="compass" class="d17"></i>
+    <i data-lucide="target" class="d18"></i>
+    <i data-lucide="feather" class="d19"></i>
+    <i data-lucide="bookmark" class="d20"></i>
+    <i data-lucide="globe" class="d21"></i>
+    <i data-lucide="atom" class="d22"></i>
+    <i data-lucide="music" class="d23"></i>
+    <i data-lucide="brain" class="d24"></i>
 </div>
 <div class="topbar">
     <a href="/home" class="apuntec-btn"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="logo-topbar"><h1>KIROKU</h1></a>
@@ -78,7 +86,7 @@
                 </div>
             </div>
         </form>
-        <a href="/curso/{{ curso.id }}/estadisticas" class="btn btn-celeste btn-chico" style="margin-top:12px;">📊 Ver estadísticas del curso</a>
+        <a href="/curso/{{ curso.id }}/estadisticas" class="btn btn-celeste btn-chico" style="margin-top:12px;"><svg class="luc" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg> Ver estadísticas del curso</a>
         {% endif %}
     </div>
 
@@ -111,6 +119,7 @@
         </form>
         {% endif %}
 
+        <div class="card-scroll">
         <table>
             <thead>
                 <tr><th>Materia</th><th>Profesor</th><th>Acciones</th></tr>
@@ -119,6 +128,7 @@
                 <tr><td colspan="3" class="vacio">Cargando...</td></tr>
             </tbody>
         </table>
+        </div>
     </div>
 
     <!-- Alumnos -->
@@ -137,5 +147,7 @@
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
 <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
 <script src="{{ url_for('static', filename='js/curso.js') }}"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

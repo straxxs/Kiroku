@@ -62,18 +62,23 @@ body {
     border: none;
 }
 
-/* Cinta adhesiva arriba */
+/* Tachuela arriba */
 .container::before {
     content: "";
     position: absolute;
-    top: -8px;
+    top: -7px;
     left: 50%;
-    transform: translateX(-50%) rotate(1deg);
-    width: 80px;
-    height: 26px;
-    background: rgba(255, 255, 255, 0.55);
-    border-radius: 2px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transform: translateX(-50%) rotate(-2deg);
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle at 38% 32%, #ff6659 0%, #e53935 40%, #ab000d 100%);
+    border-radius: 50%;
+    box-shadow:
+        0 3px 5px rgba(0, 0, 0, 0.3),
+        0 1px 2px rgba(0, 0, 0, 0.2),
+        inset 0 -3px 4px rgba(0, 0, 0, 0.2),
+        inset 0 3px 4px rgba(255, 255, 255, 0.25);
+    z-index: 2;
 }
 
 /* Esquina doblada */
@@ -339,7 +344,7 @@ form { margin: 0; }
 }
 
 .btn-enviar::after {
-    content: "✏️";
+    content: "";
     position: absolute;
     right: 14px;
     top: 50%;
@@ -441,35 +446,88 @@ form { margin: 0; }
 }
 
 /* ==================== DOODLES DECORATIVOS ==================== */
-.doodle {
-    position: absolute;
+.doodles {
+    position: fixed;
+    inset: 0;
     pointer-events: none;
     user-select: none;
-    opacity: 0.08;
-    font-size: 40px;
+    overflow: hidden;
+    z-index: 0;
 }
-.doodle-1 { top: 12%; left: -20px; transform: rotate(-15deg); }
-.doodle-2 { top: 8%; right: -15px; transform: rotate(10deg); }
-.doodle-3 { bottom: 15%; left: -18px; transform: rotate(20deg); }
-.doodle-4 { bottom: 10%; right: -12px; transform: rotate(-8deg); }
+.doodles i, .doodles svg {
+    position: absolute;
+    opacity: 0.07;
+    color: var(--tinta);
+    animation: doodle-float 6s ease-in-out infinite;
+}
+.doodles .d1 { top: 6%; left: 3%; transform: rotate(-18deg); width: 28px; height: 28px; animation-delay: 0s; --rot: -18deg; }
+.doodles .d2 { top: 18%; right: 4%; transform: rotate(12deg); width: 28px; height: 28px; animation-delay: 0.8s; --rot: 12deg; }
+.doodles .d3 { top: 40%; left: 1%; transform: rotate(25deg); width: 26px; height: 26px; animation-delay: 1.5s; --rot: 25deg; }
+.doodles .d4 { top: 60%; right: 2%; transform: rotate(-10deg); width: 34px; height: 34px; animation-delay: 2.2s; --rot: -10deg; }
+.doodles .d5 { top: 78%; left: 5%; transform: rotate(15deg); width: 24px; height: 24px; animation-delay: 2s; --rot: 15deg; }
+.doodles .d6 { top: 32%; right: 7%; transform: rotate(-22deg); width: 22px; height: 22px; animation-delay: 1.2s; --rot: -22deg; }
+.doodles .d7 { top: 52%; left: 6%; transform: rotate(8deg); width: 30px; height: 30px; animation-delay: 0.6s; --rot: 8deg; }
+.doodles .d8 { top: 10%; left: 48%; transform: rotate(-15deg); width: 24px; height: 24px; animation-delay: 1.8s; --rot: -15deg; }
+.doodles .d9 { top: 88%; right: 8%; transform: rotate(20deg); width: 28px; height: 28px; animation-delay: 2.5s; --rot: 20deg; }
+.doodles .d10 { top: 72%; left: 42%; transform: rotate(-8deg); width: 22px; height: 22px; animation-delay: 0.4s; --rot: -8deg; }
+.doodles .d11 { top: 25%; left: 20%; transform: rotate(18deg); width: 26px; height: 26px; animation-delay: 1s; --rot: 18deg; }
+.doodles .d12 { top: 95%; left: 30%; transform: rotate(-14deg); width: 30px; height: 30px; animation-delay: 2.2s; --rot: -14deg; }
+.doodles .d13 { top: 48%; right: 15%; transform: rotate(10deg); width: 24px; height: 24px; animation-delay: 0.7s; --rot: 10deg; }
+.doodles .d14 { top: 3%; right: 25%; transform: rotate(-20deg); width: 26px; height: 26px; animation-delay: 1.6s; --rot: -20deg; }
+.doodles .d15 { top: 68%; left: 25%; transform: rotate(16deg); width: 28px; height: 28px; animation-delay: 0.2s; --rot: 16deg; }
+.doodles .d16 { top: 85%; left: 15%; transform: rotate(-12deg); width: 24px; height: 24px; animation-delay: 2.8s; --rot: -12deg; }
+.doodles .d17 { top: 15%; left: 35%; transform: rotate(22deg); width: 28px; height: 28px; animation-delay: 1.3s; --rot: 22deg; }
+.doodles .d18 { top: 58%; right: 12%; transform: rotate(-16deg); width: 22px; height: 22px; animation-delay: 0.5s; --rot: -16deg; }
+.doodles .d19 { top: 42%; left: 40%; transform: rotate(10deg); width: 26px; height: 26px; animation-delay: 2.1s; --rot: 10deg; }
+.doodles .d20 { top: 70%; right: 20%; transform: rotate(-5deg); width: 24px; height: 24px; animation-delay: 0.9s; --rot: -5deg; }
+.doodles .d21 { top: 28%; right: 18%; transform: rotate(14deg); width: 30px; height: 30px; animation-delay: 1.7s; --rot: 14deg; }
+.doodles .d22 { top: 82%; left: 40%; transform: rotate(-20deg); width: 26px; height: 26px; animation-delay: 2.4s; --rot: -20deg; }
+.doodles .d23 { top: 8%; right: 35%; transform: rotate(8deg); width: 22px; height: 22px; animation-delay: 0.1s; --rot: 8deg; }
+.doodles .d24 { top: 92%; right: 30%; transform: rotate(-18deg); width: 28px; height: 28px; animation-delay: 1.9s; --rot: -18deg; }
+
+@keyframes doodle-float {
+    0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+    50% { transform: translateY(-8px) rotate(calc(var(--rot, 0deg) + 3deg)); }
+}
 
 /* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    body { padding: 30px 16px; }
+    .container { max-width: 380px; padding: 44px 28px 28px; }
+    .titulo { font-size: 26px; }
+    .subtitulo { font-size: 12px; }
+    .logo-auth { max-width: 160px; }
+    .campo input { font-size: 15px; padding: 11px 4px; }
+    .btn-enviar { font-size: 15px; padding: 12px; }
+    .enlace-secundario { font-size: 12px; }
+}
+
 @media (max-width: 480px) {
+    body { padding: 20px 10px; }
     .container {
-        padding: 42px 20px 24px;
+        padding: 36px 18px 22px;
         transform: rotate(0deg);
+        max-width: 100%;
     }
-    .requisitos {
-        grid-template-columns: 1fr;
-    }
-    #toast-container {
-        left: 16px;
-        right: 16px;
-        max-width: none;
-    }
-    .toast { transform: translateY(-40px) rotate(0deg); }
+    .container::before { width: 60px; height: 20px; }
+    .titulo { font-size: 22px; }
+    .subtitulo { font-size: 11.5px; }
+    .logo-auth { max-width: 140px; }
+    .badge { width: 56px; height: 56px; top: -30px; }
+    .campo { margin-bottom: 22px; }
+    .campo label { font-size: 11px; margin-bottom: 6px; }
+    .campo input { font-size: 16px; padding: 10px 4px; }
+    .campo-hint { font-size: 10px; }
+    .requisitos { grid-template-columns: 1fr; gap: 1px; }
+    .requisitos li { font-size: 10.5px; }
+    .btn-enviar { font-size: 14px; padding: 11px; }
+    .enlace-secundario { font-size: 12px; margin: 12px 0 0; }
+    .btn-toggle-pass { padding: 6px 8px; }
+    #toast-container { left: 10px; right: 10px; max-width: none; }
+    .toast { transform: translateY(-40px) rotate(0deg); font-size: 12.5px; padding: 12px 14px; }
     .toast-visible { transform: translateY(0) rotate(0deg); }
-    .doodle { display: none; }
+    .doodles { display: none; }
+    .kiroku-modal { max-width: 95%; padding: 16px 14px; transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

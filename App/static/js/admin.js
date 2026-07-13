@@ -1,4 +1,6 @@
 // ---------- Usuarios ----------
+const IC={'trash-2':'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>'};
+function L(n,s){s=s||16;return `<svg class="luc" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`}
 function cargarUsuarios() {
     fetch("/admin/usuarios")
         .then(res => res.json())
@@ -50,7 +52,7 @@ function cargarUsuarios() {
 }
 
 async function borrarUsuario(id) {
-    const ok = await kirokuConfirm("🗑️", "Eliminar usuario", "¿Seguro que querés eliminar este usuario? No se podrá recuperar.", "Eliminar", "Cancelar");
+    const ok = await kirokuConfirm(L("trash-2", 20), "Eliminar usuario", "¿Seguro que querés eliminar este usuario? No se podrá recuperar.", "Eliminar", "Cancelar");
     if (!ok) return;
     fetch(`/admin/usuarios/eliminar/${id}`, { method: "POST" })
         .then(res => res.json())
@@ -115,7 +117,7 @@ function cargarCursos() {
 }
 
 async function borrarCurso(id) {
-    const ok = await kirokuConfirm("🗑️", "Eliminar curso", "Se perderán todas sus materias y apuntes. ¿Continuar?", "Eliminar", "Cancelar");
+    const ok = await kirokuConfirm(L("trash-2", 20), "Eliminar curso", "Se perderán todas sus materias y apuntes. ¿Continuar?", "Eliminar", "Cancelar");
     if (!ok) return;
     fetch(`/cursos/eliminar/${id}`, { method: "POST" })
         .then(res => res.json())

@@ -22,7 +22,7 @@ function kirokuConfirm(icono, titulo, texto, btnConfirmar, btnCancelar) {
             });
         }
 
-        overlay.querySelector(".kiroku-modal-icon").textContent = icono;
+        overlay.querySelector(".kiroku-modal-icon").innerHTML = icono;
         overlay.querySelector("h3").textContent = titulo;
         overlay.querySelector("p").textContent = texto;
         overlay.querySelector("#kirokuModalConfirmar").textContent = btnConfirmar || "Aceptar";
@@ -62,7 +62,7 @@ function kirokuEdit(icono, titulo, campos, btnGuardar, btnCancelar) {
             });
         }
 
-        overlay.querySelector(".kiroku-modal-icon").textContent = icono;
+        overlay.querySelector(".kiroku-modal-icon").innerHTML = icono;
         overlay.querySelector("h3").textContent = titulo;
         overlay.querySelector("#kirokuEditGuardar").textContent = btnGuardar || "Guardar";
         overlay.querySelector("#kirokuEditCancelar").textContent = btnCancelar || "Cancelar";

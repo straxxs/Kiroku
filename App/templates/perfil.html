@@ -9,22 +9,30 @@
 </head>
 <body data-avatar-actual="{{ usuario.avatar.split('/')[-1] if usuario.avatar else '' }}">
 <div class="doodles">
-    <span class="d1">✏️</span>
-    <span class="d2">📝</span>
-    <span class="d3">📚</span>
-    <span class="d4">⭐</span>
-    <span class="d5">📎</span>
-    <span class="d6">🗒️</span>
-    <span class="d7">🎓</span>
-    <span class="d8">💡</span>
-    <span class="d9">📖</span>
-    <span class="d10">🎨</span>
-    <span class="d11">🧪</span>
-    <span class="d12">✂️</span>
-    <span class="d13">📐</span>
-    <span class="d14">🖌️</span>
-    <span class="d15">🎒</span>
-    <span class="d16">🔢</span>
+    <i data-lucide="pencil" class="d1"></i>
+    <i data-lucide="file-text" class="d2"></i>
+    <i data-lucide="book-open" class="d3"></i>
+    <i data-lucide="star" class="d4"></i>
+    <i data-lucide="paperclip" class="d5"></i>
+    <i data-lucide="clipboard-list" class="d6"></i>
+    <i data-lucide="graduation-cap" class="d7"></i>
+    <i data-lucide="lightbulb" class="d8"></i>
+    <i data-lucide="book-marked" class="d9"></i>
+    <i data-lucide="palette" class="d10"></i>
+    <i data-lucide="flask-conical" class="d11"></i>
+    <i data-lucide="scissors" class="d12"></i>
+    <i data-lucide="ruler" class="d13"></i>
+    <i data-lucide="paintbrush" class="d14"></i>
+    <i data-lucide="school" class="d15"></i>
+    <i data-lucide="hash" class="d16"></i>
+    <i data-lucide="compass" class="d17"></i>
+    <i data-lucide="target" class="d18"></i>
+    <i data-lucide="feather" class="d19"></i>
+    <i data-lucide="bookmark" class="d20"></i>
+    <i data-lucide="globe" class="d21"></i>
+    <i data-lucide="atom" class="d22"></i>
+    <i data-lucide="music" class="d23"></i>
+    <i data-lucide="brain" class="d24"></i>
 </div>
 <div class="topbar">
     <a href="/home" class="apuntec-btn"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="logo-topbar"><h1>KIROKU</h1></a>
@@ -47,18 +55,17 @@
 </div>
 
 <div class="wrapper">
-    <div class="card">
+    <div class="card" style="display:flex; flex-direction:column; padding-bottom:32px;">
         <h2>Datos de la cuenta</h2>
 
         <div style="text-align:center; margin-bottom:20px;">
             <img id="avatarPreview"
                 src="{{ url_for('static', filename=usuario.avatar) if usuario.avatar else url_for('static', filename='uploads/avatares/no_avatar.png') }}"
                 alt="Avatar actual"
-                style="width:110px;height:110px;border-radius:50%;object-fit:cover;
-                    box-shadow:0 0 0 4px var(--celeste);">
+                class="avatar-preview-grande">
         </div>
 
-        <form id="formPerfil">
+        <form id="formPerfil" style="display:flex; flex-direction:column; flex:1;">
             <div class="campo">
                 <label for="nombre">Nombre de usuario</label>
                 <input type="text" id="nombre" name="nombre" value="{{ usuario.nombre }}" required>
@@ -78,7 +85,7 @@
             <!-- Guarda el avatar elegido -->
             <input type="hidden" id="avatarElegido" name="avatar" value="">
 
-            <div class="campo" style="display:flex;align-items:flex-end; margin-top:12px;">
+            <div class="campo" style="display:flex;align-items:flex-end; margin-top:auto; padding-top:16px;">
                 <button type="submit" class="btn btn-amarillo" style="width:100%; transform:none;">Guardar cambios</button>
             </div>
         </form>
@@ -116,5 +123,7 @@
 <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
 <script src="{{ url_for('static', filename='js/perfil.js') }}"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

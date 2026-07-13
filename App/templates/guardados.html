@@ -8,6 +8,32 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
 </head>
 <body>
+<div class="doodles">
+    <i data-lucide="pencil" class="d1"></i>
+    <i data-lucide="file-text" class="d2"></i>
+    <i data-lucide="book-open" class="d3"></i>
+    <i data-lucide="star" class="d4"></i>
+    <i data-lucide="paperclip" class="d5"></i>
+    <i data-lucide="clipboard-list" class="d6"></i>
+    <i data-lucide="graduation-cap" class="d7"></i>
+    <i data-lucide="lightbulb" class="d8"></i>
+    <i data-lucide="book-marked" class="d9"></i>
+    <i data-lucide="palette" class="d10"></i>
+    <i data-lucide="flask-conical" class="d11"></i>
+    <i data-lucide="scissors" class="d12"></i>
+    <i data-lucide="ruler" class="d13"></i>
+    <i data-lucide="paintbrush" class="d14"></i>
+    <i data-lucide="school" class="d15"></i>
+    <i data-lucide="hash" class="d16"></i>
+    <i data-lucide="compass" class="d17"></i>
+    <i data-lucide="target" class="d18"></i>
+    <i data-lucide="feather" class="d19"></i>
+    <i data-lucide="bookmark" class="d20"></i>
+    <i data-lucide="globe" class="d21"></i>
+    <i data-lucide="atom" class="d22"></i>
+    <i data-lucide="music" class="d23"></i>
+    <i data-lucide="brain" class="d24"></i>
+</div>
 
 <div class="topbar">
     <a href="/home" class="apuntec-btn"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="logo-topbar"><h1>KIROKU</h1></a>
@@ -41,7 +67,7 @@
                 <a href="/materia/{{ a.id_materia }}#apunte-{{ a.id }}" class="btn btn-celeste btn-chico">Ver apunte</a>            </div>
             {% endfor %}
         {% else %}
-            <p class="vacio">Todavía no guardaste ningún apunte. 🔖<br><small>Visitá una materia y tocá el ícono de guardado para guardar apuntes aquí.</small></p>
+            <p class="vacio">Todavía no guardaste ningún apunte.<br><small>Visitá una materia y tocá el ícono de guardado para guardar apuntes aquí.</small></p>
         {% endif %}
     </div>
 </div>
@@ -49,5 +75,8 @@
 <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/topbar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

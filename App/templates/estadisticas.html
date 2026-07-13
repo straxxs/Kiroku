@@ -9,6 +9,32 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
+<div class="doodles">
+    <i data-lucide="pencil" class="d1"></i>
+    <i data-lucide="file-text" class="d2"></i>
+    <i data-lucide="book-open" class="d3"></i>
+    <i data-lucide="star" class="d4"></i>
+    <i data-lucide="paperclip" class="d5"></i>
+    <i data-lucide="clipboard-list" class="d6"></i>
+    <i data-lucide="graduation-cap" class="d7"></i>
+    <i data-lucide="lightbulb" class="d8"></i>
+    <i data-lucide="book-marked" class="d9"></i>
+    <i data-lucide="palette" class="d10"></i>
+    <i data-lucide="flask-conical" class="d11"></i>
+    <i data-lucide="scissors" class="d12"></i>
+    <i data-lucide="ruler" class="d13"></i>
+    <i data-lucide="paintbrush" class="d14"></i>
+    <i data-lucide="school" class="d15"></i>
+    <i data-lucide="hash" class="d16"></i>
+    <i data-lucide="compass" class="d17"></i>
+    <i data-lucide="target" class="d18"></i>
+    <i data-lucide="feather" class="d19"></i>
+    <i data-lucide="bookmark" class="d20"></i>
+    <i data-lucide="globe" class="d21"></i>
+    <i data-lucide="atom" class="d22"></i>
+    <i data-lucide="music" class="d23"></i>
+    <i data-lucide="brain" class="d24"></i>
+</div>
 
 <div class="topbar">
     <a href="/home" class="apuntec-btn"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="logo-topbar"><h1>KIROKU</h1></a>
@@ -42,28 +68,28 @@
     <!-- Gráficos -->
     <div class="card">
         <h2>Apuntes por Estado</h2>
-        <div style="max-width:400px;margin:0 auto;">
+        <div class="chart-wrap">
             <canvas id="chartEstado"></canvas>
         </div>
     </div>
 
     <div class="card">
         <h2>Apuntes subidos por fecha (últimos 30 días)</h2>
-        <div style="max-width:700px;margin:0 auto;">
+        <div class="chart-wrap chart-wide">
             <canvas id="chartFecha"></canvas>
         </div>
     </div>
 
     <div class="card">
         <h2>Materias con más apuntes</h2>
-        <div style="max-width:500px;margin:0 auto;">
+        <div class="chart-wrap">
             <canvas id="chartMaterias"></canvas>
         </div>
     </div>
 
     <div class="card">
         <h2>Ranking de Colaboradores</h2>
-        <div style="max-width:600px;margin:0 auto;">
+        <div class="chart-wrap chart-wide">
             <canvas id="chartRanking"></canvas>
         </div>
     </div>
@@ -79,6 +105,9 @@
 <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/topbar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
 <script src="{{ url_for('static', filename='js/estadisticas.js') }}"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
