@@ -30,13 +30,16 @@ def eliminar_usuario(id_usuario):
         return False
     cursor = conn.cursor()
     try:
+        cursor.execute("DELETE FROM Calificacion WHERE id_alumno = %s", (id_usuario,))
+        cursor.execute("DELETE FROM Guardado WHERE id_alumno = %s", (id_usuario,))
+        cursor.execute("DELETE FROM me_gusta WHERE id_usuario = %s", (id_usuario,))
+        cursor.execute("DELETE FROM Archivo_Apunte WHERE id_apunte IN (SELECT id FROM Apunte WHERE id_usuario_creador = %s)", (id_usuario,))
+        cursor.execute("DELETE FROM Apunte WHERE id_usuario_creador = %s", (id_usuario,))
+        cursor.execute("DELETE FROM password_reset_tokens WHERE id_usuario = %s", (id_usuario,))
+        cursor.execute("DELETE FROM audit_log WHERE id_usuario = %s", (id_usuario,))
         cursor.execute("DELETE FROM Usuario WHERE id = %s", (id_usuario,))
         conn.commit()
         return cursor.rowcount > 0
-    except pymysql.err.IntegrityError:
-        print("No se puede eliminar el usuario (tiene datos asociados)")
-        conn.rollback()
-        return False
     except Exception as e:
         print(f"Error al eliminar usuario: {e}")
         conn.rollback()

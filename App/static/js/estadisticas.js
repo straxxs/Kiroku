@@ -5,8 +5,6 @@ const COLORS = {
     violeta: '#B39DDB', violetaDark: '#7E57C2',
     crema: '#FFFAF0', tinta: '#28344A',
 };
-const IC={'star':'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>'};
-function L(n,s){s=s||16;return `<svg class="luc" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`}
 
 function cargarEstadisticas() {
     fetch("/admin/stats")
@@ -115,7 +113,7 @@ function cargarEstadisticas() {
                 let html = '<table><thead><tr><th>Título</th><th>Autor</th><th>Promedio</th><th>Cant.</th></tr></thead><tbody>';
                 data.apuntes_valorados.forEach(a => {
                     html += `<tr><td>${escapeHtml(a.titulo || "(sin título)")}</td><td>${escapeHtml(a.autor || "-")}</td>
-                        <td>${L("star",14)} ${a.promedio}</td><td>${a.cant_calificaciones}</td></tr>`;
+                        <td>${L("star",14,"currentColor")} ${a.promedio}</td><td>${a.cant_calificaciones}</td></tr>`;
                 });
                 html += '</tbody></table>';
                 tabla.innerHTML = html;

@@ -7,10 +7,6 @@ const inputFechaHasta = document.getElementById("fechaHasta");
 const btnBuscar = document.getElementById("btnBuscar");
 const contResultados = document.getElementById("resultadosBusqueda");
 
-const EXT_IMG_B = ["png", "jpg", "jpeg", "webp", "gif"];
-const IC={'search':'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>','paperclip':'<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>','star':'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>','search-x':'<path d="m13.5 8.5-5 5"/><path d="m8.5 8.5 5 5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'};
-function L(n,s){s=s||16;return `<svg class="luc" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`}
-
 // Cargar materias del curso para el filtro
 function cargarMateriasFiltro() {
     const body = document.body;
@@ -63,7 +59,7 @@ function hacerBusqueda() {
             data.apuntes.forEach(a => {
                 const primerArchivo = (a.archivos || [])[0];
                 let miniatura = "";
-                if (primerArchivo && EXT_IMG_B.includes((primerArchivo.tipo || "").toLowerCase())) {
+                if (primerArchivo && EXT_IMG.includes((primerArchivo.tipo || "").toLowerCase())) {
                     miniatura = `<img src="/static/${primerArchivo.ruta}" alt=""
                         style="width:60px;height:60px;object-fit:cover;border-radius:10px;flex-shrink:0;">`;
                 } else if (primerArchivo) {

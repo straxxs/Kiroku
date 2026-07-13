@@ -214,6 +214,23 @@ def eliminar_curso(id_curso, carpeta_apuntes):
         cursor.close()
         conn.close()
 
+def obtener_curso_por_codigo(codigo):
+    """Busca un curso por su código de invitación alfanumérico."""
+    conn = obtener_conexion()
+    if not conn:
+        return None
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        cursor.execute("SELECT id, anio, division FROM Curso WHERE codigo_invitacion = %s", (codigo,))
+        return cursor.fetchone()
+    except Exception as e:
+        print(f"Error al buscar curso por código: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def unir_usuario_a_curso(id_usuario, id_curso):
     """El alumno se une a un curso existente. No cambia su rol (sigue siendo alumno)."""
     conn = obtener_conexion()
@@ -243,13 +260,25 @@ def unir_usuario_a_curso(id_usuario, id_curso):
 
 
 def salir_de_curso(id_usuario):
-    """El usuario deja su curso actual. Si era moderador, vuelve a alumno."""
+    """El usuario deja su curso actual. Si era moderador, vuelve a alumno.
+    No permite salir si es el creador del curso (debe eliminar el curso primero)."""
     conn = obtener_conexion()
     if not conn:
         return False
 
-    cursor = conn.cursor()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
+        cursor.execute("SELECT id_curso, rol FROM Usuario WHERE id = %s", (id_usuario,))
+        user = cursor.fetchone()
+        if not user or not user["id_curso"]:
+            return False
+
+        if user["rol"] == "moderador":
+            cursor.execute("SELECT id_creador FROM Curso WHERE id = %s", (user["id_curso"],))
+            curso = cursor.fetchone()
+            if curso and curso["id_creador"] == id_usuario:
+                return False
+
         cursor.execute(
             "UPDATE Usuario SET id_curso = NULL, rol = 'alumno' WHERE id = %s AND rol != 'admin'",
             (id_usuario,),
@@ -263,3 +292,20 @@ def salir_de_curso(id_usuario):
     finally:
         cursor.close()
         conn.close()
+
+
+def eliminar_curso_como_creador(id_curso, id_usuario, carpeta_apuntes):
+    """Solo el creador del curso puede eliminarlo."""
+    conn = obtener_conexion()
+    if not conn:
+        return False
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        cursor.execute("SELECT id_creador FROM Curso WHERE id = %s", (id_curso,))
+        curso = cursor.fetchone()
+        if not curso or curso["id_creador"] != id_usuario:
+            return False
+    finally:
+        cursor.close()
+        conn.close()
+    return eliminar_curso(id_curso, carpeta_apuntes)

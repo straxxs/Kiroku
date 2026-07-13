@@ -487,6 +487,7 @@ th {
 .rol-admin { background: var(--violeta-light); color: var(--violeta-dark); }
 .rol-moderador { background: var(--celeste-light); color: var(--celeste-dark); }
 .rol-alumno { background: var(--borde); color: var(--tinta-soft); }
+.rol-bloqueado { background: #fde8e8; color: #b71c1c; }
 
 .lista-simple { list-style: none; padding: 0; margin: 0; }
 .lista-simple li {

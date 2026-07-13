@@ -1,10 +1,13 @@
 import os
 import re
+import datetime
 import pymysql
+import jwt as pyjwt
 from flask import Flask, render_template, request, redirect, url_for, make_response, jsonify, send_file
 from werkzeug.utils import secure_filename
 from modulos.auth import (
     login, registrar_usuario, generar_token_jwt, verificar_token_jwt,
+    JWT_SECRET,
 )
 from modulos.validacion import (
     validar_contraseña, validar_nombre_usuario, validar_email,
@@ -13,6 +16,7 @@ from modulos.cursos import (
     crear_curso, editar_curso, listar_cursos, eliminar_curso,
     obtener_curso, listar_alumnos_curso,
     unir_usuario_a_curso, salir_de_curso,
+    obtener_curso_por_codigo, eliminar_curso_como_creador,
 )
 from modulos.materias import (
     crear_materia, editar_materia, listar_materias_por_curso,
@@ -113,21 +117,6 @@ def puede_ver_materia(id_curso):
 
 def _ip_cliente():
     return request.headers.get("X-Forwarded-For", request.remote_addr)
-
-
-def _obtener_curso_por_codigo(codigo):
-    """Busca un curso por su código de invitación alfanumérico."""
-    from db.conexion import obtener_conexion
-    conn = obtener_conexion()
-    if not conn:
-        return None
-    cursor = conn.cursor(pymysql.cursors.DictCursor)
-    try:
-        cursor.execute("SELECT id, anio, division FROM Curso WHERE codigo_invitacion = %s", (codigo,))
-        return cursor.fetchone()
-    finally:
-        cursor.close()
-        conn.close()
 
 
 @app.context_processor
@@ -245,9 +234,11 @@ def restablecer(token):
         if not id_usuario:
             return render_template("restablecer.html", token_invalido=True)
         return render_template("restablecer.html", token=token, token_invalido=False)
+    from modulos.validacion import validar_contraseña
     contraseña = request.form.get("contraseña", "")
-    if len(contraseña) < 4:
-        return jsonify({"ok": False, "mensaje": "La contraseña debe tener al menos 4 caracteres."})
+    ok_pass, errores_pass = validar_contraseña(contraseña)
+    if not ok_pass:
+        return jsonify({"ok": False, "mensaje": "Contraseña: " + " ".join(errores_pass)})
     if resetear_contraseña(token, contraseña):
         return jsonify({"ok": True, "mensaje": "¡Contraseña actualizada! Ahora iniciá sesión."})
     return jsonify({"ok": False, "mensaje": "Token inválido o expirado."})
@@ -400,7 +391,6 @@ def perfil_actualizar():
 
     if actualizar_perfil(u["id"], nombre, avatar_ruta):
         registrar_accion(u["id"], "perfil_actualizado", f"Nombre: {nombre}", _ip_cliente())
-        from modulos.usuarios import obtener_usuario
         u_fresco = obtener_usuario(u["id"])
         nuevo_token = _refrescar_token_curso(u_fresco, u_fresco.get("id_curso"))
         resp = jsonify({"ok": True, "mensaje": "Perfil actualizado"})
@@ -429,7 +419,7 @@ def cursos_unirse():
     if not codigo:
         return jsonify({"ok": False, "mensaje": "Ingresá un código de invitación"}), 400
 
-    curso = _obtener_curso_por_codigo(codigo)
+    curso = obtener_curso_por_codigo(codigo)
     if not curso:
         return jsonify({"ok": False, "mensaje": "Código inválido o curso no encontrado"}), 404
 
@@ -453,7 +443,10 @@ def cursos_salir():
     if not u.get("id_curso"):
         return jsonify({"ok": False, "mensaje": "No estás en ningún curso"}), 400
 
-    if salir_de_curso(u["id"]):
+    resultado = salir_de_curso(u["id"])
+    if resultado == False:
+        return jsonify({"ok": False, "mensaje": "Sos el creador del curso. Eliminalo primero."}), 400
+    if resultado:
         registrar_accion(u["id"], "curso_salido", None, _ip_cliente())
         token = _refrescar_token_curso(u, None, rol_forzado="alumno")
         resp = jsonify({"ok": True, "mensaje": "Saliste del curso"})
@@ -464,9 +457,6 @@ def cursos_salir():
 
 def _refrescar_token_curso(usuario_actual, id_curso, rol_forzado=None):
     """Genera un nuevo JWT con id_curso y rol actualizados."""
-    from modulos.auth import JWT_SECRET
-    import jwt as pyjwt
-    import datetime
     payload = {
         "id": usuario_actual["id"],
         "nombre": usuario_actual["nombre"],
@@ -545,10 +535,20 @@ def cursos_editar(id_curso):
 def cursos_eliminar(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    u = _usuario_actual()
+    if not requiere_admin() and not es_mi_curso(id_curso):
+        return jsonify({"ok": False, "mensaje": "No tenés permisos para borrar este curso"}), 403
     if not requiere_admin():
-        return jsonify({"ok": False, "mensaje": "Solo el admin puede borrar cursos"}), 403
+        curso = obtener_curso(id_curso)
+        if not curso or curso["id_creador"] != u["id"]:
+            return jsonify({"ok": False, "mensaje": "Solo el creador o un admin pueden borrar el curso"}), 403
     if eliminar_curso(id_curso, UPLOAD_APUNTES):
-        registrar_accion(_usuario_actual()["id"], "curso_eliminado", f"Curso ID: {id_curso}", _ip_cliente())
+        registrar_accion(u["id"], "curso_eliminado", f"Curso ID: {id_curso}", _ip_cliente())
+        if not requiere_admin():
+            token = _refrescar_token_curso(u, None, rol_forzado="alumno")
+            resp = jsonify({"ok": True, "mensaje": "Curso eliminado"})
+            resp.set_cookie(JWT_COOKIE, token, httponly=True, samesite="Lax", max_age=86400)
+            return resp
         return jsonify({"ok": True, "mensaje": "Curso eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
