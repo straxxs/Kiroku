@@ -62,7 +62,7 @@
             &nbsp;·&nbsp; Creado por: {{ curso.creador or '-' }}
         </p>
         {% if puede_gestionar %}
-        <p>
+        <p class="campo-code" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             Código para invitar compañeros:
             <strong style="font-size:18px; color:var(--celeste-dark); font-family:monospace;">{{ curso.codigo_invitacion }}</strong>
             <button class="btn btn-celeste btn-chico" onclick="copiarCodigo('{{ curso.codigo_invitacion }}')">Copiar</button>

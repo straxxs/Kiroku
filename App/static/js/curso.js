@@ -57,9 +57,9 @@ function cargarMaterias() {
                 }
 
                 tr.innerHTML = `
-                    <td>${escapeHtml(m.nombre)}</td>
-                    <td>${escapeHtml(m.nombre_profesor || "-")}</td>
-                    <td class="acciones">${acciones}</td>`;
+                    <td data-label="Materia">${escapeHtml(m.nombre)}</td>
+                    <td data-label="Profesor">${escapeHtml(m.nombre_profesor || "-")}</td>
+                    <td data-label="Acciones" class="acciones">${acciones}</td>`;
                 tabla.appendChild(tr);
             });
         });

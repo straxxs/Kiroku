@@ -24,21 +24,21 @@ function cargarUsuarios() {
                     .join("");
 
                 tr.innerHTML = `
-                    <td>${u.id}</td>
-                    <td>
+                    <td data-label="ID">${u.id}</td>
+                    <td data-label="Nombre">
                         <div class="autor-linea">
                             ${htmlAvatar(u.nombre, u.avatar, "avatar-chico")}
                             <span>${escapeHtml(u.nombre)}</span>
                         </div>
                     </td>
-                    <td>
+                    <td data-label="Rol">
                         <select class="select-rol" onchange="cambiarRol(${u.id}, this.value)">
                             ${opcionesRol}
                         </select>
                     </td>
-                    <td>${estadoBadge}</td>
-                    <td>${curso}</td>
-                    <td class="acciones">
+                    <td data-label="Estado">${estadoBadge}</td>
+                    <td data-label="Curso">${curso}</td>
+                    <td data-label="Acciones" class="acciones">
                         <button class="btn ${u.estado === 'bloqueado' ? 'btn-celeste' : 'btn-rojo'} btn-chico"
                             onclick="toggleEstado(${u.id}, '${u.estado === 'bloqueado' ? 'activo' : 'bloqueado'}')">
                             ${u.estado === 'bloqueado' ? 'Activar' : 'Bloquear'}
@@ -102,11 +102,11 @@ function cargarCursos() {
             data.cursos.forEach(c => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td>${c.id}</td>
-                    <td>${escapeHtml(c.anio)}</td>
-                    <td>${escapeHtml(c.division)}</td>
-                    <td>${escapeHtml(c.creador || "-")}</td>
-                    <td class="acciones">
+                    <td data-label="ID">${c.id}</td>
+                    <td data-label="Año">${escapeHtml(c.anio)}</td>
+                    <td data-label="División">${escapeHtml(c.division)}</td>
+                    <td data-label="Creador">${escapeHtml(c.creador || "-")}</td>
+                    <td data-label="Acciones" class="acciones">
                         <a href="/curso/${c.id}" class="btn btn-celeste btn-chico">Ver</a>
                         <button class="btn btn-rojo btn-chico" onclick="borrarCurso(${c.id})">Eliminar</button>
                     </td>`;

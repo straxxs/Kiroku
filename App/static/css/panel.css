@@ -201,6 +201,8 @@ svg.luc-star.big { width: 1.4em; height: 1.4em; }
     z-index: 1;
 }
 
+.campo-code { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
 /* ==================== DOODLES DE FONDO ==================== */
 .doodles {
     position: fixed;
@@ -417,6 +419,7 @@ th, td {
     font-size: 13.5px;
     vertical-align: middle;
 }
+.select-rol { padding: 4px 6px; border-radius: 4px; border: 1.5px solid var(--borde); font-size: 12px; font-family: 'Nunito', sans-serif; background: var(--crema); }
 
 th {
     color: var(--celeste-dark);
@@ -870,6 +873,9 @@ th {
 .chart-wrap { max-width: 400px; margin: 0 auto; }
 .chart-wrap.chart-wide { max-width: 700px; }
 
+/* ==================== MOBILE TABLE CARDS ==================== */
+.tabla-materias-mob { display: none; }
+
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
     .topbar { padding: 10px 14px; flex-wrap: nowrap; }
@@ -879,16 +885,25 @@ th {
     .wrapper { padding: 16px 12px 40px; }
     .card { padding: 18px 16px; }
     #listaApuntes, #resultadosBusqueda { grid-template-columns: 1fr; }
-    .form-row { gap: 10px; }
-    .preview-grid { gap: 8px; }
-    .preview-item { width: 140px; }
+    .form-row { flex-direction: column; gap: 10px; }
+    .form-row .campo { min-width: 0; }
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .preview-item { width: 100%; }
     .preview-img { height: 90px; }
     .preview-pdf { height: 130px; }
     .avatar-grid { grid-template-columns: repeat(4, 1fr); }
     .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .actividad-dia { width: 14px; height: 14px; }
     .doodles { display: none; }
-    .card-scroll table { min-width: 480px; }
+    .card-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .card-scroll table { min-width: 0; width: 100%; }
+    .card-scroll thead { display: none; }
+    .card-scroll tbody { display: flex; flex-direction: column; gap: 8px; }
+    .card-scroll tr { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; background: var(--crema); border: 1.5px solid var(--borde); border-radius: var(--radio); }
+    .card-scroll td { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--borde); font-size: 13px; }
+    .card-scroll td:last-child { border-bottom: none; }
+    .card-scroll td::before { content: attr(data-label); font-weight: 800; font-size: 11px; color: var(--celeste-dark); text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; margin-right: 8px; }
+    .card-scroll td:last-child { justify-content: flex-end; }
     .kiroku-modal { max-width: 92%; padding: 20px 18px; margin: 0 12px; }
     .kiroku-modal h3 { font-size: 18px; }
     .kiroku-modal p { font-size: 13px; }
@@ -904,6 +919,10 @@ th {
     .acciones .btn { flex: 1; min-width: 0; text-align: center; }
     .chart-wrap { max-width: 100%; }
     .chart-wrap canvas { width: 100% !important; height: auto !important; }
+    #toast-container { right: 12px; left: 12px; max-width: none; }
+    .toast { font-size: 13px; padding: 12px 14px; }
+    .campo-code { flex-wrap: wrap; gap: 8px; }
+    .campo-code strong { font-size: 16px; }
 }
 
 @media (max-width: 480px) {
@@ -921,7 +940,6 @@ th {
     .btn-chico { font-size: 11px; padding: 5px 8px; min-height: 30px; }
     .campo label { font-size: 11px; }
     .campo input, .campo select { padding: 10px 8px; font-size: 16px; }
-    .form-row { flex-direction: column; gap: 8px; }
     .form-row .campo { min-width: 0; }
     .preview-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
     .preview-item { width: 100%; }
@@ -953,6 +971,13 @@ th {
     .lightbox-cerrar { font-size: 28px; top: 14px; right: 16px; }
     .actividad-leyenda { font-size: 10px; gap: 3px; }
     .actividad-leyenda .actividad-dia { width: 10px; height: 10px; }
+    #toast-container { right: 8px; left: 8px; max-width: none; top: 12px; }
+    .toast { font-size: 12.5px; padding: 10px 12px; transform: translateY(-40px); }
+    .toast-visible { transform: translateY(0); }
+    .campo-code { flex-direction: column; align-items: flex-start; }
+    .campo-code strong { font-size: 15px; }
+    .acciones-materia { flex-direction: column; }
+    .acciones-materia .btn { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
