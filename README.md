@@ -9,7 +9,7 @@ Kiroku es una plataforma desarrollada para que los estudiantes de la Escuela Té
 ## Características
 
 ### Funcionales
-- **Registro e inicio de sesión** con nombre de usuario o email (bcrypt + JWT)
+- **Registro e inicio de sesión** con nombre de usuario o email (bcrypt + JWT, rechaza usuarios bloqueados)
 - **Recuperación de contraseña** por email
 - **Subida de apuntes** (PDF, imágenes, videos, documentos) con drag & drop
 - **Búsqueda avanzada** por materia, fecha, autor y palabras clave
@@ -26,7 +26,7 @@ Kiroku es una plataforma desarrollada para que los estudiantes de la Escuela Té
 - **Código de invitación** para unirse a cursos (formato XXXX-XXXX)
 - **Modales custom** (kirokuConfirm / kirokuEdit) con estilo post-it
 - **Efectos de sonido** sutiles (Web Audio API) en interacciones clave
-- **Doodles animados** de fondo (emoji flotantes)
+- **Doodles animados** de fondo (íconos Lucide SVG)
 - **Diseño responsive** optimizado para móvil
 
 ### Roles
@@ -40,7 +40,7 @@ Kiroku es una plataforma desarrollada para que los estudiantes de la Escuela Té
 - Diseño **post-it** con papel de fondo, cintas adhesivas y sombras
 - Tipografías **Kalam** (headings) + **Nunito** (body)
 - Paleta: celeste, amarillo, verde, rojo, violeta
-- Botones con borde, rotación sutil, y efecto press
+- Botones con borde, estilo post-it, y efecto press
 
 ## Stack Tecnológico
 

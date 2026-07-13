@@ -1,14 +1,14 @@
 (function(){
 // ---------- Usuarios ----------
 function cargarUsuarios() {
-    fetch("/admin/usuarios")
+    fetch("/admin/usuarios", { credentials: "same-origin" })
         .then(res => res.json())
         .then(data => {
             const tabla = document.getElementById("tablaUsuarios");
             tabla.innerHTML = "";
 
             if (!data.usuarios || data.usuarios.length === 0) {
-                tabla.innerHTML = '<tr><td colspan="6" class="vacio">No hay usuarios.</td></tr>';
+                tabla.innerHTML = '<tr><td colspan="5" class="vacio">No hay usuarios.</td></tr>';
                 return;
             }
 
@@ -24,7 +24,6 @@ function cargarUsuarios() {
                     .join("");
 
                 tr.innerHTML = `
-                    <td data-label="ID">${u.id}</td>
                     <td data-label="Nombre">
                         <div class="autor-linea">
                             ${htmlAvatar(u.nombre, u.avatar, "avatar-chico")}
@@ -65,7 +64,7 @@ async function borrarUsuario(id) {
 function toggleEstado(id, nuevoEstado) {
     const fd = new FormData();
     fd.append("estado", nuevoEstado);
-    fetch(`/admin/usuarios/${id}/estado`, { method: "POST", body: fd })
+    fetch(`/admin/usuarios/${id}/estado`, { method: "POST", credentials: "same-origin", body: fd })
         .then(res => res.json())
         .then(data => {
             mostrarToast(data.mensaje, data.ok ? "ok" : "error");
@@ -95,14 +94,13 @@ function cargarCursos() {
             tabla.innerHTML = "";
 
             if (!data.cursos || data.cursos.length === 0) {
-                tabla.innerHTML = '<tr><td colspan="5" class="vacio">No hay cursos.</td></tr>';
+                tabla.innerHTML = '<tr><td colspan="4" class="vacio">No hay cursos.</td></tr>';
                 return;
             }
 
             data.cursos.forEach(c => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td data-label="ID">${c.id}</td>
                     <td data-label="Año">${escapeHtml(c.anio)}</td>
                     <td data-label="División">${escapeHtml(c.division)}</td>
                     <td data-label="Creador">${escapeHtml(c.creador || "-")}</td>

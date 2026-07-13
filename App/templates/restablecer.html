@@ -58,11 +58,42 @@
     <form id="restablecerForm" data-token="{{ token }}">
         <div class="campo">
             <label for="contraseña">Nueva contraseña</label>
-            <input type="password" id="contraseña" name="contraseña" placeholder="••••••••" required minlength="4">
+            <div class="campo-password">
+                <input type="password" id="contraseña" name="contraseña" placeholder="Mínimo 8 caracteres" required
+                       minlength="8" maxlength="128" autocomplete="new-password">
+                <button type="button" class="btn-toggle-pass" aria-label="Mostrar contraseña"
+                        onclick="togglePass('contraseña', this)">
+                    <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="barra-fortaleza" class="barra-fortaleza" aria-live="polite">
+                <div class="barra-fortaleza-fill"></div>
+            </div>
+            <small id="texto-fortaleza" class="campo-hint"></small>
+            <ul id="requisitos" class="requisitos">
+                <li data-req="len">Mínimo 8 caracteres</li>
+                <li data-req="mayus">1 letra mayúscula</li>
+                <li data-req="minus">1 letra minúscula</li>
+                <li data-req="num">1 número</li>
+            </ul>
         </div>
         <div class="campo">
             <label for="confirmar">Confirmar contraseña</label>
-            <input type="password" id="confirmar" name="confirmar" placeholder="••••••••" required minlength="4">
+            <div class="campo-password">
+                <input type="password" id="confirmar" name="confirmar" placeholder="Repetí tu contraseña"
+                       required minlength="8" maxlength="128" autocomplete="new-password">
+                <button type="button" class="btn-toggle-pass" aria-label="Mostrar contraseña"
+                        onclick="togglePass('confirmar', this)">
+                    <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
+            <small id="msg-confirmar" class="campo-hint"></small>
         </div>
         <button type="submit" class="btn-enviar">Guardar contraseña</button>
     </form>
@@ -75,6 +106,7 @@
 <script>lucide.createIcons();</script>
 <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
+<script src="{{ url_for('static', filename='js/registro.js') }}"></script>
 <script src="{{ url_for('static', filename='js/restablecer.js') }}"></script>
 </body>
 </html>

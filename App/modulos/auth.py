@@ -106,7 +106,7 @@ def registrar_usuario(nombre, contraseña, email):
 def login(nombre_o_email, contraseña):
     conn = obtener_conexion()
     if not conn:
-        return False
+        return None, "error"
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         sql = "SELECT * FROM usuario WHERE nombre = %s OR email = %s"
@@ -114,14 +114,17 @@ def login(nombre_o_email, contraseña):
         usuario = cursor.fetchone()
 
         if not usuario:
-            return False
+            return None, "no_existe"
+
+        if usuario.get("estado") == "bloqueado":
+            return None, "bloqueado"
 
         if migrar_hash_si_es_necesario(contraseña, usuario["contrasena"], usuario["id"]):
-            return usuario
-        return False
+            return usuario, "ok"
+        return None, "clave"
     except Exception as e:
         print(f"Error en login: {e}")
-        return False
+        return None, "error"
     finally:
         cursor.close()
         conn.close()

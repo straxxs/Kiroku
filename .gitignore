@@ -16,10 +16,10 @@ venv/
 *.swo
 
 # Uploads (datos de usuarios)
-App/uploads/apuntes/*
-App/uploads/avatares/*
-!App/uploads/avatares/no_avatar.png
-!App/uploads/avatares/avatar*.png
+App/static/uploads/apuntes/*
+App/static/uploads/avatares/*
+!App/static/uploads/avatares/no_avatar.png
+!App/static/uploads/avatares/avatar*.png
 
 # OS
 Thumbs.db
@@ -29,3 +29,5 @@ desktop.ini
 # Misc
 *.log
 .env
+read_reqs.py
+high-level-description-*

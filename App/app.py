@@ -178,7 +178,9 @@ def login_route():
         contraseña = request.form.get("contraseña", "")
         if not nombre or not contraseña:
             return jsonify({"ok": False, "mensaje": "Completá todos los campos."})
-        usuario = login(nombre, contraseña)
+        usuario, motivo = login(nombre, contraseña)
+        if motivo == "bloqueado":
+            return jsonify({"ok": False, "mensaje": "Tu cuenta está bloqueada. Contactá al administrador."})
         if usuario:
             token = generar_token_jwt(usuario)
             registrar_accion(usuario["id"], "login", "Inicio de sesión", _ip_cliente())

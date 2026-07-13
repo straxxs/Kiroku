@@ -390,19 +390,19 @@ input:focus, select:focus {
     box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
 }
 
-.btn-amarillo { background: var(--amarillo); color: var(--tinta); border-color: var(--amarillo-dark); transform: rotate(-1deg); }
-.btn-celeste  { background: var(--celeste); color: var(--tinta); border-color: var(--celeste-dark); transform: rotate(0.5deg); }
-.btn-violeta  { background: var(--violeta); color: var(--blanco); border-color: var(--violeta-dark); transform: rotate(-0.5deg); }
-.btn-verde    { background: var(--verde); color: var(--tinta); border-color: var(--verde-dark); transform: rotate(0.5deg); }
-.btn-rojo     { background: var(--rojo); color: var(--blanco); border-color: var(--rojo-dark); transform: rotate(-0.5deg); }
-.btn-gris     { background: var(--borde); color: var(--tinta); border-color: var(--tinta-soft); transform: rotate(0.5deg); }
+.btn-amarillo { background: var(--amarillo); color: var(--tinta); border-color: var(--amarillo-dark); }
+.btn-celeste  { background: var(--celeste); color: var(--tinta); border-color: var(--celeste-dark); }
+.btn-violeta  { background: var(--violeta); color: var(--blanco); border-color: var(--violeta-dark); }
+.btn-verde    { background: var(--verde); color: var(--tinta); border-color: var(--verde-dark); }
+.btn-rojo     { background: var(--rojo); color: var(--blanco); border-color: var(--rojo-dark); }
+.btn-gris     { background: var(--borde); color: var(--tinta); border-color: var(--tinta-soft); }
 
 .btn:hover {
-    transform: rotate(0deg) translateY(-2px);
+    transform: translateY(-2px);
     box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.18);
 }
 .btn:active {
-    transform: rotate(0deg) translate(1px, 1px);
+    transform: translate(1px, 1px);
     box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.15);
 }
 .btn:focus-visible { outline: 3px solid var(--celeste-dark); outline-offset: 2px; }
@@ -415,19 +415,21 @@ table { width: 100%; border-collapse: collapse; margin-top: 8px; }
 th, td {
     text-align: left;
     padding: 10px 8px;
-    border-bottom: 1px solid var(--borde);
     font-size: 13.5px;
     vertical-align: middle;
 }
-.select-rol { padding: 4px 6px; border-radius: 4px; border: 1.5px solid var(--borde); font-size: 12px; font-family: 'Nunito', sans-serif; background: var(--crema); }
-
 th {
     color: var(--celeste-dark);
     text-transform: uppercase;
     font-size: 11px;
     letter-spacing: 0.05em;
     font-weight: 800;
+    border-bottom: 2px solid var(--borde);
 }
+.select-rol { padding: 4px 6px; border-radius: 4px; border: 1.5px solid var(--borde); font-size: 12px; font-family: 'Nunito', sans-serif; background: var(--crema); }
+
+tbody tr { border-bottom: 1px solid var(--borde); }
+tbody tr:last-child { border-bottom: none; }
 
 .card-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
@@ -899,11 +901,10 @@ th {
     .card-scroll table { min-width: 0; width: 100%; }
     .card-scroll thead { display: none; }
     .card-scroll tbody { display: flex; flex-direction: column; gap: 8px; }
-    .card-scroll tr { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; background: var(--crema); border: 1.5px solid var(--borde); border-radius: var(--radio); }
+    .card-scroll tbody tr { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; background: var(--crema); border: 1.5px solid var(--borde); border-radius: var(--radio); border-bottom: 1.5px solid var(--borde); }
     .card-scroll td { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--borde); font-size: 13px; }
-    .card-scroll td:last-child { border-bottom: none; }
+    .card-scroll td:last-child { border-bottom: none; justify-content: flex-end; }
     .card-scroll td::before { content: attr(data-label); font-weight: 800; font-size: 11px; color: var(--celeste-dark); text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; margin-right: 8px; }
-    .card-scroll td:last-child { justify-content: flex-end; }
     .kiroku-modal { max-width: 92%; padding: 20px 18px; margin: 0 12px; }
     .kiroku-modal h3 { font-size: 18px; }
     .kiroku-modal p { font-size: 13px; }
