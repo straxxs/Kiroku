@@ -1,3 +1,4 @@
+(function(){
 const ID_MATERIA = document.body.dataset.idMateria;
 const PUEDE_GESTIONAR = document.body.dataset.puedeGestionar === "true";
 let MI_ID = null;
@@ -90,7 +91,6 @@ function htmlPreview(f) {
         </div>`;
 }
 
-// ---------- Botón de archivo bonito ----------
 // ---------- Botón de archivo bonito (múltiples, opcional) ----------
 const fileDrop = document.getElementById("fileDrop");
 const inputArchivo = document.getElementById("archivo");
@@ -370,3 +370,11 @@ function toggleMeGusta(idApunte, boton) {
 }
 
 cargarApuntes();
+
+window.calificar = calificar;
+window.toggleGuardar = toggleGuardar;
+window.toggleMeGusta = toggleMeGusta;
+window.borrarApunte = borrarApunte;
+window.abrirLightbox = abrirLightbox;
+
+})();

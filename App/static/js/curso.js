@@ -1,3 +1,4 @@
+(function(){
 // ---------- Datos del curso (leídos del <body>) ----------
 const ID_CURSO = document.body.dataset.idCurso;
 const PUEDE_GESTIONAR = document.body.dataset.puedeGestionar === "true";
@@ -289,3 +290,12 @@ function rechazar(id) {
 cargarMaterias();
 cargarAlumnos();
 cargarPendientes();
+
+window.editarMateria = editarMateria;
+window.borrarMateria = borrarMateria;
+window.copiarCodigo = copiarCodigo;
+window.hacerModerador = hacerModerador;
+window.bajarModerador = bajarModerador;
+window.aprobar = aprobar;
+window.rechazar = rechazar;
+})();

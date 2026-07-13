@@ -1,5 +1,11 @@
+/* ============================================================
+   KIROKU · styles.css
+   Estilos de autenticación (login, registro, recuperar)
+   ============================================================ */
+
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Kalam:wght@600;700&display=swap');
 
+/* ==================== VARIABLES ==================== */
 :root {
     --celeste: #42A5F5;
     --celeste-dark: #1565C0;
@@ -21,25 +27,27 @@
     --tinta-soft: #607D8B;
     --borde: #CFD8DC;
     --blanco: #FFFFFF;
+
     --sombra-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
     --sombra-md: 0 6px 20px rgba(0, 0, 0, 0.10);
     --sombra-lg: 0 14px 40px rgba(0, 0, 0, 0.12);
     --sombra-postit: 2px 3px 8px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+
     --radio: 4px;
     --transicion: 0.2s ease;
 }
 
-* { box-sizing: border-box; }
+/* ==================== RESET ==================== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { overflow-x: hidden; }
 
 body {
-    margin: 0;
     min-height: 100vh;
-    font-family: 'Nunito', -apple-system, sans-serif;
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--crema);
     background-image:
-        linear-gradient(rgba(0,0,0,0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,0,0,0.015) 1px, transparent 1px);
+        linear-gradient(rgba(0, 0, 0, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
     background-size: 24px 24px;
     color: var(--tinta);
     display: flex;
@@ -47,6 +55,7 @@ body {
     align-items: center;
     padding: 50px 16px;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 /* ==================== POST-IT NOTE ==================== */
@@ -59,10 +68,10 @@ body {
     padding: 50px 32px 32px;
     box-shadow: var(--sombra-postit);
     transform: rotate(-0.5deg);
-    border: none;
+    z-index: 1;
 }
 
-/* Tachuela arriba */
+/* Tachuela */
 .container::before {
     content: "";
     position: absolute;
@@ -89,7 +98,7 @@ body {
     right: 0;
     width: 28px;
     height: 28px;
-    background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.04) 50%);
+    background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, 0.04) 50%);
     border-radius: 0 0 2px 0;
 }
 
@@ -126,14 +135,13 @@ body {
     gap: 8px;
     margin: 6px 0 16px;
 }
+
 .spiral span {
     width: 10px;
     height: 10px;
     border-radius: 50%;
     background: var(--crema);
-    box-shadow:
-        inset 0 0 0 2px #b0bec5,
-        0 2px 4px rgba(0, 0, 0, 0.10);
+    box-shadow: inset 0 0 0 2px #b0bec5, 0 2px 4px rgba(0, 0, 0, 0.10);
     animation: spiral-pulse 4s ease-in-out infinite;
 }
 .spiral span:nth-child(2) { animation-delay: 0.3s; }
@@ -145,7 +153,7 @@ body {
 
 @keyframes spiral-pulse {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); box-shadow: inset 0 0 0 2px #b0bec5, 0 2px 6px rgba(0,0,0,0.15); }
+    50% { transform: scale(1.1); box-shadow: inset 0 0 0 2px #b0bec5, 0 2px 6px rgba(0, 0, 0, 0.15); }
 }
 
 /* ==================== TÍTULOS ==================== */
@@ -159,30 +167,26 @@ body {
     font-weight: 700;
     font-size: 30px;
     color: var(--tinta);
-    margin: 0 0 2px;
+    margin-bottom: 2px;
 }
 
 .subtitulo {
     font-size: 13px;
     color: var(--tinta-soft);
-    margin: 0;
     line-height: 1.4;
+}
+
+.logo-auth {
+    display: block;
+    max-width: 180px;
+    height: auto;
+    margin: 0 auto 8px;
 }
 
 /* ==================== FORMULARIOS ==================== */
 form { margin: 0; }
 
-.campo {
-    margin-bottom: 28px;
-}
-
-.campo + .campo {
-    padding-top: 0;
-}
-
-#formApunte .btn {
-    margin-top: 14px;
-}
+.campo { margin-bottom: 28px; }
 
 .campo label {
     display: block;
@@ -216,7 +220,7 @@ form { margin: 0; }
 .campo input:focus {
     outline: none;
     border-bottom-color: var(--celeste-dark);
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.75);
 }
 
 .campo-hint {
@@ -228,13 +232,8 @@ form { margin: 0; }
 }
 
 /* ==================== PASSWORD TOGGLE ==================== */
-.campo-password {
-    position: relative;
-}
-
-.campo-password input {
-    padding-right: 42px;
-}
+.campo-password { position: relative; }
+.campo-password input { padding-right: 42px; }
 
 .btn-toggle-pass {
     position: absolute;
@@ -282,8 +281,7 @@ form { margin: 0; }
 /* ==================== REQUISITOS ==================== */
 .requisitos {
     list-style: none;
-    padding: 0;
-    margin: 8px 0 0;
+    margin-top: 8px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2px 12px;
@@ -313,14 +311,6 @@ form { margin: 0; }
     font-weight: 900;
 }
 
-/* ==================== LOGO ==================== */
-.logo-auth {
-    display: block;
-    max-width: 180px;
-    height: auto;
-    margin: 0 auto 8px;
-}
-
 /* ==================== BOTÓN PRINCIPAL ==================== */
 .btn-enviar {
     display: block;
@@ -336,32 +326,14 @@ form { margin: 0; }
     font-size: 15px;
     letter-spacing: 0.03em;
     cursor: pointer;
-    transition: transform 0.12s, background 0.12s;
+    transition: transform 0.12s, background 0.12s, box-shadow 0.12s;
     box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
-    position: relative;
-    overflow: hidden;
     transform: rotate(-0.5deg);
-}
-
-.btn-enviar::after {
-    content: "";
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 16px;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.2s;
 }
 
 .btn-enviar:hover {
     transform: rotate(0deg) translateY(-2px);
     box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.18);
-}
-
-.btn-enviar:hover::after {
-    opacity: 1;
-    transform: translateY(-50%) rotate(-12deg);
 }
 
 .btn-enviar:active {
@@ -384,7 +356,7 @@ form { margin: 0; }
 /* ==================== ENLACES ==================== */
 .enlace-secundario {
     text-align: center;
-    margin: 16px 0 0;
+    margin-top: 16px;
     font-size: 13px;
     color: var(--tinta-soft);
 }
@@ -427,25 +399,14 @@ form { margin: 0; }
     opacity: 0;
     transform: translateX(40px) rotate(1deg);
     transition: opacity 0.3s ease, transform 0.3s ease;
-    position: relative;
-}
-
-.toast-visible {
-    opacity: 1;
-    transform: translateX(0) rotate(0deg);
-}
-
-.toast-ok {
-    background: linear-gradient(135deg, var(--verde), var(--verde-dark));
     border-left: 4px solid var(--amarillo);
 }
 
-.toast-error {
-    background: linear-gradient(135deg, var(--rojo), var(--rojo-dark));
-    border-left: 4px solid var(--amarillo);
-}
+.toast-visible { opacity: 1; transform: translateX(0) rotate(0deg); }
+.toast-ok { background: linear-gradient(135deg, var(--verde), var(--verde-dark)); }
+.toast-error { background: linear-gradient(135deg, var(--rojo), var(--rojo-dark)); }
 
-/* ==================== DOODLES DECORATIVOS ==================== */
+/* ==================== DOODLES DE FONDO ==================== */
 .doodles {
     position: fixed;
     inset: 0;
@@ -454,36 +415,38 @@ form { margin: 0; }
     overflow: hidden;
     z-index: 0;
 }
+
 .doodles i, .doodles svg {
     position: absolute;
     opacity: 0.07;
     color: var(--tinta);
     animation: doodle-float 6s ease-in-out infinite;
 }
-.doodles .d1 { top: 6%; left: 3%; transform: rotate(-18deg); width: 28px; height: 28px; animation-delay: 0s; --rot: -18deg; }
-.doodles .d2 { top: 18%; right: 4%; transform: rotate(12deg); width: 28px; height: 28px; animation-delay: 0.8s; --rot: 12deg; }
-.doodles .d3 { top: 40%; left: 1%; transform: rotate(25deg); width: 26px; height: 26px; animation-delay: 1.5s; --rot: 25deg; }
-.doodles .d4 { top: 60%; right: 2%; transform: rotate(-10deg); width: 34px; height: 34px; animation-delay: 2.2s; --rot: -10deg; }
-.doodles .d5 { top: 78%; left: 5%; transform: rotate(15deg); width: 24px; height: 24px; animation-delay: 2s; --rot: 15deg; }
-.doodles .d6 { top: 32%; right: 7%; transform: rotate(-22deg); width: 22px; height: 22px; animation-delay: 1.2s; --rot: -22deg; }
-.doodles .d7 { top: 52%; left: 6%; transform: rotate(8deg); width: 30px; height: 30px; animation-delay: 0.6s; --rot: 8deg; }
-.doodles .d8 { top: 10%; left: 48%; transform: rotate(-15deg); width: 24px; height: 24px; animation-delay: 1.8s; --rot: -15deg; }
-.doodles .d9 { top: 88%; right: 8%; transform: rotate(20deg); width: 28px; height: 28px; animation-delay: 2.5s; --rot: 20deg; }
-.doodles .d10 { top: 72%; left: 42%; transform: rotate(-8deg); width: 22px; height: 22px; animation-delay: 0.4s; --rot: -8deg; }
-.doodles .d11 { top: 25%; left: 20%; transform: rotate(18deg); width: 26px; height: 26px; animation-delay: 1s; --rot: 18deg; }
-.doodles .d12 { top: 95%; left: 30%; transform: rotate(-14deg); width: 30px; height: 30px; animation-delay: 2.2s; --rot: -14deg; }
-.doodles .d13 { top: 48%; right: 15%; transform: rotate(10deg); width: 24px; height: 24px; animation-delay: 0.7s; --rot: 10deg; }
-.doodles .d14 { top: 3%; right: 25%; transform: rotate(-20deg); width: 26px; height: 26px; animation-delay: 1.6s; --rot: -20deg; }
-.doodles .d15 { top: 68%; left: 25%; transform: rotate(16deg); width: 28px; height: 28px; animation-delay: 0.2s; --rot: 16deg; }
-.doodles .d16 { top: 85%; left: 15%; transform: rotate(-12deg); width: 24px; height: 24px; animation-delay: 2.8s; --rot: -12deg; }
-.doodles .d17 { top: 15%; left: 35%; transform: rotate(22deg); width: 28px; height: 28px; animation-delay: 1.3s; --rot: 22deg; }
-.doodles .d18 { top: 58%; right: 12%; transform: rotate(-16deg); width: 22px; height: 22px; animation-delay: 0.5s; --rot: -16deg; }
-.doodles .d19 { top: 42%; left: 40%; transform: rotate(10deg); width: 26px; height: 26px; animation-delay: 2.1s; --rot: 10deg; }
-.doodles .d20 { top: 70%; right: 20%; transform: rotate(-5deg); width: 24px; height: 24px; animation-delay: 0.9s; --rot: -5deg; }
-.doodles .d21 { top: 28%; right: 18%; transform: rotate(14deg); width: 30px; height: 30px; animation-delay: 1.7s; --rot: 14deg; }
-.doodles .d22 { top: 82%; left: 40%; transform: rotate(-20deg); width: 26px; height: 26px; animation-delay: 2.4s; --rot: -20deg; }
-.doodles .d23 { top: 8%; right: 35%; transform: rotate(8deg); width: 22px; height: 22px; animation-delay: 0.1s; --rot: 8deg; }
-.doodles .d24 { top: 92%; right: 30%; transform: rotate(-18deg); width: 28px; height: 28px; animation-delay: 1.9s; --rot: -18deg; }
+
+.doodles .d1 { top: 6%; left: 3%; width: 28px; height: 28px; animation-delay: 0s; --rot: -18deg; }
+.doodles .d2 { top: 18%; right: 4%; width: 28px; height: 28px; animation-delay: 0.8s; --rot: 12deg; }
+.doodles .d3 { top: 40%; left: 1%; width: 26px; height: 26px; animation-delay: 1.5s; --rot: 25deg; }
+.doodles .d4 { top: 60%; right: 2%; width: 34px; height: 34px; animation-delay: 2.2s; --rot: -10deg; }
+.doodles .d5 { top: 78%; left: 5%; width: 24px; height: 24px; animation-delay: 2s; --rot: 15deg; }
+.doodles .d6 { top: 32%; right: 7%; width: 22px; height: 22px; animation-delay: 1.2s; --rot: -22deg; }
+.doodles .d7 { top: 52%; left: 6%; width: 30px; height: 30px; animation-delay: 0.6s; --rot: 8deg; }
+.doodles .d8 { top: 10%; left: 48%; width: 24px; height: 24px; animation-delay: 1.8s; --rot: -15deg; }
+.doodles .d9 { top: 88%; right: 8%; width: 28px; height: 28px; animation-delay: 2.5s; --rot: 20deg; }
+.doodles .d10 { top: 72%; left: 42%; width: 22px; height: 22px; animation-delay: 0.4s; --rot: -8deg; }
+.doodles .d11 { top: 25%; left: 20%; width: 26px; height: 26px; animation-delay: 1s; --rot: 18deg; }
+.doodles .d12 { top: 95%; left: 30%; width: 30px; height: 30px; animation-delay: 2.2s; --rot: -14deg; }
+.doodles .d13 { top: 48%; right: 15%; width: 24px; height: 24px; animation-delay: 0.7s; --rot: 10deg; }
+.doodles .d14 { top: 3%; right: 25%; width: 26px; height: 26px; animation-delay: 1.6s; --rot: -20deg; }
+.doodles .d15 { top: 68%; left: 25%; width: 28px; height: 28px; animation-delay: 0.2s; --rot: 16deg; }
+.doodles .d16 { top: 85%; left: 15%; width: 24px; height: 24px; animation-delay: 2.8s; --rot: -12deg; }
+.doodles .d17 { top: 15%; left: 35%; width: 28px; height: 28px; animation-delay: 1.3s; --rot: 22deg; }
+.doodles .d18 { top: 58%; right: 12%; width: 22px; height: 22px; animation-delay: 0.5s; --rot: -16deg; }
+.doodles .d19 { top: 42%; left: 40%; width: 26px; height: 26px; animation-delay: 2.1s; --rot: 10deg; }
+.doodles .d20 { top: 70%; right: 20%; width: 24px; height: 24px; animation-delay: 0.9s; --rot: -5deg; }
+.doodles .d21 { top: 28%; right: 18%; width: 30px; height: 30px; animation-delay: 1.7s; --rot: 14deg; }
+.doodles .d22 { top: 82%; left: 40%; width: 26px; height: 26px; animation-delay: 2.4s; --rot: -20deg; }
+.doodles .d23 { top: 8%; right: 35%; width: 22px; height: 22px; animation-delay: 0.1s; --rot: 8deg; }
+.doodles .d24 { top: 92%; right: 30%; width: 28px; height: 28px; animation-delay: 1.9s; --rot: -18deg; }
 
 @keyframes doodle-float {
     0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
@@ -498,39 +461,34 @@ form { margin: 0; }
     .subtitulo { font-size: 12px; }
     .logo-auth { max-width: 160px; }
     .campo input { font-size: 15px; padding: 11px 4px; }
-    .btn-enviar { font-size: 15px; padding: 12px; }
+    .btn-enviar { font-size: 15px; }
     .enlace-secundario { font-size: 12px; }
 }
 
 @media (max-width: 480px) {
     body { padding: 20px 10px; }
-    .container {
-        padding: 36px 18px 22px;
-        transform: rotate(0deg);
-        max-width: 100%;
-    }
-    .container::before { width: 60px; height: 20px; }
+    .container { padding: 36px 18px 22px; transform: rotate(0deg); max-width: 100%; }
+    .container::before { width: 18px; height: 18px; }
     .titulo { font-size: 22px; }
     .subtitulo { font-size: 11.5px; }
     .logo-auth { max-width: 140px; }
     .badge { width: 56px; height: 56px; top: -30px; }
     .campo { margin-bottom: 22px; }
     .campo label { font-size: 11px; margin-bottom: 6px; }
-    .campo input { font-size: 16px; padding: 10px 4px; }
+    .campo input { font-size: 16px; padding: 10px 4px; } /* 16px evita zoom en iOS */
     .campo-hint { font-size: 10px; }
     .requisitos { grid-template-columns: 1fr; gap: 1px; }
     .requisitos li { font-size: 10.5px; }
     .btn-enviar { font-size: 14px; padding: 11px; }
-    .enlace-secundario { font-size: 12px; margin: 12px 0 0; }
+    .enlace-secundario { font-size: 12px; margin-top: 12px; }
     .btn-toggle-pass { padding: 6px 8px; }
     #toast-container { left: 10px; right: 10px; max-width: none; }
     .toast { transform: translateY(-40px) rotate(0deg); font-size: 12.5px; padding: 12px 14px; }
     .toast-visible { transform: translateY(0) rotate(0deg); }
     .doodles { display: none; }
-    .kiroku-modal { max-width: 95%; padding: 16px 14px; transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .btn-enviar, .badge, .spiral span { animation: none; transition: none; }
+    .btn-enviar, .badge, .spiral span, .doodles i, .doodles svg { animation: none; transition: none; }
     .toast { transition: none; }
 }

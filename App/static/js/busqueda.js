@@ -1,3 +1,4 @@
+(function(){
 // ---------- Motor de búsqueda (home) con filtros avanzados ----------
 const inputBusqueda = document.getElementById("q");
 const selectOrden = document.getElementById("orden");
@@ -115,3 +116,4 @@ if (btnBuscar) {
     cargarMateriasFiltro();
     hacerBusqueda();
 }
+})();
