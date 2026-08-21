@@ -684,27 +684,6 @@ th {
     50% { transform: scaleY(1.2); }
 }
 
-/* ==================== BOTÓN ME GUSTA ==================== */
-.btn-megusta {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border: 2px solid var(--borde);
-    border-radius: 20px;
-    background: var(--blanco);
-    cursor: pointer;
-    font-size: 13px;
-    transition: border-color var(--transicion), background var(--transicion);
-    margin-left: auto;
-}
-.btn-megusta:hover { border-color: var(--celeste); background: var(--celeste-light); }
-.btn-megusta.activo { border-color: var(--celeste-dark); background: var(--celeste-light); }
-.btn-megusta .megusta-icono { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; transition: transform var(--transicion); }
-.btn-megusta .megusta-icono svg { width: 18px; height: 18px; }
-.btn-megusta.activo .megusta-icono { transform: scale(1.2); color: var(--celeste-dark); }
-.btn-megusta .megusta-count { font-size: 12px; font-weight: 700; color: var(--tinta-soft); }
-.btn-megusta.activo .megusta-count { color: var(--celeste-dark); }
 
 /* ==================== RESALTADO ==================== */
 .apunte-resaltado {

@@ -42,8 +42,12 @@
 
         <div id="perfilDropdown" class="dropdown-menu">
             <div class="dropdown-header">{{ nombre }}</div>
-            {% if session_id_curso %}
-                <a href="/curso/{{ session_id_curso }}">Mi curso</a>
+            {% if mis_cursos %}
+                <hr>
+                <div class="dropdown-header">Mis cursos</div>
+                {% for c in mis_cursos %}
+                    <a href="/curso/{{ c.id }}">{{ c.anio }}° {{ c.division }}°</a>
+                {% endfor %}
             {% endif %}
             <a href="/home">Inicio</a>
             {% if rol == 'admin' %}<a href="/admin">Panel admin</a>{% endif %}
@@ -91,7 +95,7 @@
         </form>
     </div>
 
-    <div class="card" style="margin-top:16px;">
+        <div class="card" style="margin-top:16px;">
         <h2>Mi información</h2>
         <div class="info-lista">
             <div class="info-fila">
@@ -99,16 +103,39 @@
                 <span class="info-valor">{{ usuario.email }}</span>
             </div>
             <div class="info-fila">
-                <span class="info-label">Rol</span>
+                <span class="info-label">Rol global</span>
                 <span class="info-valor info-rol">{{ rol }}</span>
             </div>
-            {% if usuario.anio and usuario.division %}
             <div class="info-fila">
-                <span class="info-label">Curso</span>
-                <span class="info-valor">{{ usuario.anio }}° {{ usuario.division }}°</span>
+                <span class="info-label">Cursos</span>
+                <span class="info-valor">{{ cursos|length }}</span>
             </div>
-            {% endif %}
         </div>
+    </div>
+
+    <!-- ============ MIS CURSOS EN EL PERFIL ============ -->
+    <div class="card" style="margin-top:16px;">
+        <h2>Mis cursos</h2>
+        {% if cursos %}
+        <ul class="lista-cursos">
+            {% for c in cursos %}
+            <li class="curso-item">
+                <div class="curso-info">
+                    <span class="curso-nombre">{{ c.anio }}° {{ c.division }}°</span>
+                    <span class="badge-rol rol-{{ c.rol_curso }}">{{ c.rol_curso }}</span>
+                    {% if c.soy_creador %}<span class="badge-rol rol-admin">creador</span>{% endif %}
+                </div>
+                <div class="curso-acciones">
+                    <a href="/curso/{{ c.id }}" class="btn btn-celeste btn-chico">Entrar</a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="vacio">No pertenecés a ningún curso.
+            <a href="/home" class="btn btn-celeste btn-chico" style="margin-left:8px;">Unirme a uno</a>
+        </p>
+        {% endif %}
     </div>
 
     <div class="card" style="text-align:center; margin-top:16px;">

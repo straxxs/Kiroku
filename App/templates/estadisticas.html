@@ -45,7 +45,13 @@
         <div id="perfilDropdown" class="dropdown-menu">
             <div class="dropdown-header">{{ nombre }}</div>
             <a href="/perfil">Mi perfil</a>
-            {% if session_id_curso %}<a href="/curso/{{ session_id_curso }}">Mi curso</a>{% endif %}
+            {% if mis_cursos %}
+                <hr>
+                <div class="dropdown-header">Mis cursos</div>
+                {% for c in mis_cursos %}
+                    <a href="/curso/{{ c.id }}">{{ c.anio }}° {{ c.division }}°</a>
+                {% endfor %}
+            {% endif %}
             <a href="/home">Inicio</a>
             {% if rol == 'admin' %}<a href="/admin">Panel admin</a>{% endif %}
             {% if rol == 'admin' %}<a href="/admin/estadisticas">Estadísticas</a>{% endif %}

@@ -43,7 +43,13 @@
         <div id="perfilDropdown" class="dropdown-menu">
             <div class="dropdown-header">{{ nombre }}</div>
             <a href="/perfil">Mi perfil</a>
-            <a href="/curso/{{ curso.id }}">Mi curso</a>
+            {% if mis_cursos %}
+                <hr>
+                <div class="dropdown-header">Mis cursos</div>
+                {% for c in mis_cursos %}
+                    <a href="/curso/{{ c.id }}">{{ c.anio }}° {{ c.division }}°</a>
+                {% endfor %}
+            {% endif %}
             <a href="/home">Inicio</a>
             {% if rol == 'admin' %}<a href="/admin">Panel admin</a>{% endif %}
             {% if rol == 'admin' %}<a href="/admin/estadisticas">Estadísticas</a>{% endif %}
@@ -113,10 +119,10 @@
             const g = data.resumen;
             document.getElementById("resumenCurso").className = "stats-grid";
             document.getElementById("resumenCurso").innerHTML = `
-                <div class="stat-box stat-celeste"><div class="stat-num">${g.total_alumnos}</div><div class="stat-label">Alumnos</div></div>
+                <div class="stat-box stat-celeste"><div class="stat-num">${g.total_alumnos}</div><div class="stat-label">Miembros</div></div>
                 <div class="stat-box stat-amarillo"><div class="stat-num">${g.pendientes}</div><div class="stat-label">Pendientes</div></div>
                 <div class="stat-box stat-verde"><div class="stat-num">${g.aprobados}</div><div class="stat-label">Aprobados</div></div>
-                <div class="stat-box stat-celeste"><div class="stat-num"><svg class="luc" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> ${g.promedio_valoracion || "—"}</div><div class="stat-label">Promedio</div></div>
+                <div class="stat-box stat-celeste"><div class="stat-num">${L_STAR} ${g.promedio_valoracion || "—"}</div><div class="stat-label">Promedio</div></div>
             `;
 
             // Actividad – fila de puntitos (últimos 30 días)

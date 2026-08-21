@@ -7,7 +7,10 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/panel.css') }}">
 </head>
-<body data-id-curso="{{ curso.id }}" data-puede-gestionar="{{ 'true' if puede_gestionar else 'false' }}" data-id-creador="{{ curso.id_creador }}" data-id-usuario="{{ id_usuario_actual }}">
+<body data-id-curso="{{ curso.id }}"
+      data-puede-gestionar="{{ 'true' if puede_gestionar else 'false' }}"
+      data-id-creador="{{ curso.id_creador }}"
+      data-id-usuario="{{ id_usuario_actual }}">
 <div class="doodles">
     <i data-lucide="pencil" class="d1"></i>
     <i data-lucide="file-text" class="d2"></i>
@@ -53,6 +56,14 @@
 </div>
 
 <div class="wrapper">
+
+    <div class="card" style="margin-bottom:12px;">
+        <a href="/home" class="btn btn-celeste btn-chico">← Mis cursos</a>
+        <span style="margin-left:10px; color:var(--tinta-soft); font-size:13px;">
+            Estás viendo <strong>{{ curso.anio }}° {{ curso.division }}°</strong>
+            · tu rol acá: <strong>{{ mi_rol_curso }}</strong>
+        </span>
+    </div>
 
     <!-- Datos del curso -->
     <div class="card">

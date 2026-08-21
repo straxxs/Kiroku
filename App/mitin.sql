@@ -99,11 +99,18 @@ CREATE TABLE IF NOT EXISTS `guardado` (
   PRIMARY KEY (`id_alumno`,`id_apunte`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS `me_gusta` (
+-- ... (todo igual hasta la creación de tablas) ...
+
+-- REEMPLAZAR el bloque de me_gusta por:
+CREATE TABLE IF NOT EXISTS `usuario_curso` (
   `id_usuario` int(11) NOT NULL,
-  `id_apunte` int(11) NOT NULL,
-  PRIMARY KEY (`id_usuario`,`id_apunte`)
+  `id_curso` int(11) NOT NULL,
+  `rol_curso` enum('alumno','moderador') NOT NULL DEFAULT 'alumno',
+  `fecha_union` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id_usuario`,`id_curso`),
+  KEY `idx_uc_curso` (`id_curso`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 CREATE TABLE IF NOT EXISTS `audit_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -190,6 +197,17 @@ INSERT INTO `guardado` (`id_alumno`, `id_apunte`) VALUES
 (15, 13),
 (16, 13);
 
+INSERT INTO `usuario_curso` (`id_usuario`, `id_curso`, `rol_curso`) VALUES
+(1, 1, 'moderador'),
+(3, 1, 'alumno'),
+(8, 1, 'alumno'),
+(9, 1, 'moderador'),
+(10, 1, 'moderador'),
+(14, 1, 'moderador'),
+(14, 6, 'moderador'),
+(15, 1, 'alumno'),
+(16, 1, 'alumno');
+
 -- ============================================================
 -- 3. AGREGAR FOREIGN KEYS (ahora que los datos existen)
 -- ============================================================
@@ -220,9 +238,11 @@ ALTER TABLE `guardado`
   ADD CONSTRAINT `guardado_ibfk_1` FOREIGN KEY (`id_alumno`) REFERENCES `usuario` (`id`),
   ADD CONSTRAINT `guardado_ibfk_2` FOREIGN KEY (`id_apunte`) REFERENCES `apunte` (`id`);
 
-ALTER TABLE `me_gusta`
-  ADD CONSTRAINT `megusta_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `megusta_ibfk_2` FOREIGN KEY (`id_apunte`) REFERENCES `apunte` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `usuario_curso`
+  ADD CONSTRAINT `uc_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `uc_ibfk_2` FOREIGN KEY (`id_curso`) REFERENCES `curso` (`id`) ON DELETE CASCADE;
+
 
 ALTER TABLE `audit_log`
   ADD CONSTRAINT `auditlog_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id`) ON DELETE SET NULL;

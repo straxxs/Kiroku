@@ -105,23 +105,21 @@ function cargarAlumnos() {
 
             data.alumnos.forEach(a => {
                 const li = document.createElement("li");
-
                 let boton = "";
-                if (ES_CREADOR && a.rol === "alumno") {
+                if (ES_CREADOR && a.rol_curso === "alumno") {
                     boton = `<button class="btn btn-celeste btn-chico"
                                 onclick="hacerModerador(${a.id})">Hacer moderador</button>`;
-                } else if (ES_CREADOR && a.rol === "moderador" && String(a.id) !== String(ID_CREADOR)) {
+                } else if (ES_CREADOR && a.rol_curso === "moderador" && String(a.id) !== String(ID_CREADOR)) {
                     boton = `<button class="btn btn-rojo btn-chico"
                                 onclick="bajarModerador(${a.id})">Quitar moderador</button>`;
                 }
-
                 li.innerHTML = `
                     <span class="autor-linea" style="margin-bottom:0;">
                         ${htmlAvatar(a.nombre, a.avatar, "avatar-chico")}
                         <span>${escapeHtml(a.nombre)}</span>
                     </span>
                     <span style="display:flex;align-items:center;gap:8px;">
-                        <span class="badge-rol rol-${escapeHtml(a.rol)}">${escapeHtml(a.rol)}</span>
+                        <span class="badge-rol rol-${escapeHtml(a.rol_curso)}">${escapeHtml(a.rol_curso)}</span>
                         ${boton}
                     </span>`;
                 lista.appendChild(li);

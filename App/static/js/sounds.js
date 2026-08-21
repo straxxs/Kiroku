@@ -19,11 +19,6 @@ function sonidoPop() {
     setTimeout(() => _playTone(1200, 0.06, "sine", 0.1), 30);
 }
 
-function sonidoLike() {
-    _playTone(523, 0.08, "sine", 0.12);
-    setTimeout(() => _playTone(784, 0.1, "sine", 0.12), 60);
-    setTimeout(() => _playTone(1047, 0.12, "sine", 0.08), 120);
-}
 
 function sonidoEnviar() {
     _playTone(440, 0.08, "triangle", 0.1);
@@ -49,7 +44,7 @@ function sonidoHover() {
     let _lastHover = 0;
     let _lastEl = null;
     document.addEventListener("mouseover", function (e) {
-        const el = e.target.closest("a, button, .btn, .btn-megusta, .perfil-avatar");
+        const el = e.target.closest("a, button, .btn, .perfil-avatar");
         if (!el || el === _lastEl) return;
         _lastEl = el;
         const now = performance.now();

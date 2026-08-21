@@ -34,20 +34,22 @@
     <i data-lucide="music" class="d23"></i>
     <i data-lucide="brain" class="d24"></i>
 </div>
+
 <div class="topbar">
     <a href="/home" class="apuntec-btn"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="logo-topbar"><h1>KIROKU</h1></a>
     <div class="perfil-menu">
-        <img id="perfilAvatar" class="perfil-avatar"
-            src="{{ url_for('static', filename=session_avatar) }}" alt="Mi avatar">
-
+        <img id="perfilAvatar" class="perfil-avatar" src="{{ url_for('static', filename=session_avatar) }}" alt="Mi avatar">
         <div id="perfilDropdown" class="dropdown-menu">
             <div class="dropdown-header">{{ nombre }}</div>
             <a href="/perfil">Mi perfil</a>
-            {% if session_id_curso %}
-                <a href="/curso/{{ session_id_curso }}">Mi curso</a>
+            {% if mis_cursos %}
+                <hr>
+                <div class="dropdown-header">Mis cursos</div>
+                {% for c in mis_cursos %}
+                    <a href="/curso/{{ c.id }}">{{ c.anio }}° {{ c.division }}°</a>
+                {% endfor %}
             {% endif %}
-            {% if rol == 'admin' %}<a href="/admin">Panel admin</a>{% endif %}
-            {% if rol == 'admin' %}<a href="/admin/estadisticas">Estadísticas</a>{% endif %}
+            {% if rol == 'admin' %}<hr><a href="/admin">Panel admin</a>{% endif %}
             <hr>
             <a href="/logout" class="item-logout">Cerrar sesión</a>
         </div>
@@ -57,65 +59,101 @@
 <div class="wrapper">
     <div class="card">
         <h2>¡Hola, {{ nombre }}!</h2>
-        <p>Tu rol actual: <strong>{{ rol }}</strong></p>
+        <p>Tu rol global: <strong>{{ rol }}</strong></p>
+        <p>Pertenecés a <strong>{{ cursos|length }}</strong> curso{{ 's' if cursos|length != 1 else '' }}.</p>
+    </div>
 
-        {% if id_curso %}
-            <p>Ya formás parte de un curso. Entrá para ver materias y apuntes.</p>
-            <div class="acciones">
-                <a href="/curso/{{ id_curso }}" class="btn btn-celeste">Ir a mi curso</a>
-                <button id="btnSalir" class="btn btn-rojo">Salir del curso</button>
-            </div>
+    <!-- ============ MIS CURSOS ============ -->
+    <div class="card">
+        <h2>Mis cursos</h2>
+        {% if cursos %}
+        <ul class="lista-cursos">
+            {% for c in cursos %}
+            <li class="curso-item">
+                <div class="curso-info">
+                    <span class="curso-nombre">{{ c.anio }}° {{ c.division }}°</span>
+                    <span class="badge-rol rol-{{ c.rol_curso }}">{{ c.rol_curso }}</span>
+                    {% if c.soy_creador %}<span class="badge-rol rol-admin">creador</span>{% endif %}
+                </div>
+                <div class="curso-acciones">
+                    <a href="/curso/{{ c.id }}" class="btn btn-celeste btn-chico">Entrar</a>
+                    {% if c.rol_curso == 'moderador' %}
+                    <a href="/curso/{{ c.id }}/estadisticas" class="btn btn-amarillo btn-chico">Stats</a>
+                    {% endif %}
+                    {% if c.soy_creador %}
+                    <button class="btn btn-rojo btn-chico"
+                            data-accion="eliminar-curso" data-curso="{{ c.id }}"
+                            data-nombre="{{ c.anio }}° {{ c.division }}°">Eliminar</button>
+                    {% else %}
+                    <button class="btn btn-rojo btn-chico"
+                            data-accion="salir-curso" data-curso="{{ c.id }}"
+                            data-nombre="{{ c.anio }}° {{ c.division }}°">Salir</button>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
         {% else %}
-            <p>Todavía no pertenecés a ningún curso. Unite a uno o creá el tuyo.</p>
+        <p class="vacio">Todavía no pertenecés a ningún curso.<br>
+           <small>Unite con un código de invitación o creá el tuyo.</small></p>
         {% endif %}
     </div>
 
-    {% if not id_curso %}
+    <!-- ============ UNIRME A OTRO CURSO ============ -->
     <div class="card">
-        <h2>Unirme a un curso</h2>
-        <p>Pedile a un compañero el <strong>código de invitación</strong> (ej: A7B2-C9D1) y pegalo acá.</p>
+        <h2>+ Unirme a otro curso</h2>
+        <p>Pedile a un compañero el <strong>código de invitación</strong> (ej: A7B2-C9D1).</p>
         <form id="formUnirse">
             <div class="form-row">
                 <div class="campo">
                     <label for="codigoCurso">Código de invitación</label>
-                    <input type="text" id="codigoCurso" name="codigo" placeholder="Ej: A7B2-C9D1" required
-                           style="text-transform:uppercase; font-family:monospace;" maxlength="9">
+                    <input type="text" id="codigoCurso" name="codigo" placeholder="Ej: A7B2-C9D1"
+                           required maxlength="9" style="text-transform:uppercase; font-family:monospace;">
                 </div>
-                <div class="campo" style="display:flex;align-items:flex-end;">
+                <div class="campo">
                     <button type="submit" class="btn btn-celeste" style="width:100%; transform:none;">Unirme</button>
                 </div>
             </div>
         </form>
     </div>
 
+    <!-- ============ CREAR CURSO ============ -->
     <div class="card">
-        <h2>Crear tu propio curso</h2>
-        <p>Si creás un curso te convertís en <strong>moderador</strong> y podés agregarle materias.</p>
+        <h2>Crear un curso nuevo</h2>
+        <p>Al crearlo te convertís en <strong>moderador de ese curso</strong>.</p>
         <form id="formCurso">
             <div class="form-row">
                 <div class="campo">
                     <label for="anio">Año</label>
-                    <input type="number" id="anio" name="anio" placeholder="Ej: 5" required min="1" max="6">
+                    <input type="number" id="anio" name="anio" placeholder="Ej: 5" required min="1" max="7">
                 </div>
                 <div class="campo">
                     <label for="division">División</label>
-                    <input type="text" id="division" name="division" placeholder="Ej: A" required>
+                    <input type="text" id="division" name="division" placeholder="Ej: A" required maxlength="25">
                 </div>
-                <div class="campo" style="display:flex;align-items:flex-end;">
+                <div class="campo">
                     <button type="submit" class="btn btn-amarillo" style="width:100%; transform:none;">Crear curso</button>
                 </div>
             </div>
         </form>
     </div>
-    {% endif %}
 
-    {% if id_curso %}
+    <!-- ============ BÚSQUEDA POR CURSO ============ -->
+    {% if cursos %}
     <div class="card">
-        <h2><svg class="luc" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Buscar apuntes</h2>
+        <h2>{{ L_ICON|safe if false }}Buscar apuntes</h2>
         <div class="form-row">
-            <div class="campo" style="flex:2;">
+            <div class="campo">
+                <label for="cursoBusqueda">Curso</label>
+                <select id="cursoBusqueda">
+                    {% for c in cursos %}
+                    <option value="{{ c.id }}">{{ c.anio }}° {{ c.division }}°</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="campo">
                 <label for="q">Buscar por título, alumno o materia</label>
-                <input type="text" id="q" placeholder="Ej: Matemática, resumen, Pérez...">
+                <input type="text" id="q" placeholder="Ej: resumen, Pérez...">
             </div>
             <div class="campo">
                 <label for="orden">Ordenar por</label>
@@ -124,14 +162,12 @@
                     <option value="valorados">Mejor valorados</option>
                 </select>
             </div>
-            <div class="campo">
-                <label for="filtroMateria">Materia</label>
-                <select id="filtroMateria">
-                    <option value="">Todas las materias</option>
-                </select>
-            </div>
         </div>
         <div class="form-row" style="margin-top:8px;">
+            <div class="campo">
+                <label for="filtroMateria">Materia</label>
+                <select id="filtroMateria"><option value="">Todas las materias</option></select>
+            </div>
             <div class="campo">
                 <label for="fechaDesde">Fecha desde</label>
                 <input type="date" id="fechaDesde">
@@ -140,16 +176,15 @@
                 <label for="fechaHasta">Fecha hasta</label>
                 <input type="date" id="fechaHasta">
             </div>
-            <div class="campo" style="display:flex;align-items:flex-end;">
+            <div class="campo">
                 <button type="button" id="btnBuscar" class="btn btn-celeste" style="width:100%;">Buscar</button>
             </div>
         </div>
         <div id="resultadosBusqueda" style="margin-top:16px;">
-            <p class="vacio">Escribí algo o presioná Buscar para ver los apuntes de tu curso.</p>
+            <p class="vacio">Elegí un curso y presioná Buscar.</p>
         </div>
     </div>
     {% endif %}
-
 </div>
 
 <script src="{{ url_for('static', filename='js/busqueda.js') }}"></script>

@@ -3,16 +3,21 @@ from db.conexion import obtener_conexion
 
 
 def listar_usuarios():
+    """Usuarios + cantidad y lista de cursos (multi-curso)."""
     conn = obtener_conexion()
     if not conn:
         return []
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         cursor.execute("""
-            SELECT u.id, u.nombre, u.email, u.rol, u.estado, u.id_curso, u.avatar,
-                c.anio, c.division
+            SELECT u.id, u.nombre, u.email, u.rol, u.estado, u.avatar,
+                   COUNT(uc.id_curso) AS cant_cursos,
+                   GROUP_CONCAT(CONCAT(c.anio,'°',c.division,'°')
+                                ORDER BY c.anio SEPARATOR ', ') AS cursos
             FROM Usuario u
-            LEFT JOIN Curso c ON u.id_curso = c.id
+            LEFT JOIN usuario_curso uc ON uc.id_usuario = u.id
+            LEFT JOIN Curso c ON uc.id_curso = c.id
+            GROUP BY u.id
             ORDER BY u.nombre
         """)
         return cursor.fetchall()
@@ -30,13 +35,18 @@ def eliminar_usuario(id_usuario):
         return False
     cursor = conn.cursor()
     try:
-        cursor.execute("DELETE FROM Usuario WHERE id = %s", (id_usuario,))
+        cursor.execute("DELETE FROM Calificacion WHERE id_alumno=%s", (id_usuario,))
+        cursor.execute("DELETE FROM Guardado WHERE id_alumno=%s", (id_usuario,))
+        # ❌ línea de me_gusta eliminada
+        cursor.execute("DELETE FROM usuario_curso WHERE id_usuario=%s", (id_usuario,))
+        cursor.execute("""DELETE FROM Archivo_Apunte WHERE id_apunte IN
+                          (SELECT id FROM Apunte WHERE id_usuario_creador=%s)""", (id_usuario,))
+        cursor.execute("DELETE FROM Apunte WHERE id_usuario_creador=%s", (id_usuario,))
+        cursor.execute("DELETE FROM password_reset_tokens WHERE id_usuario=%s", (id_usuario,))
+        cursor.execute("DELETE FROM audit_log WHERE id_usuario=%s", (id_usuario,))
+        cursor.execute("DELETE FROM Usuario WHERE id=%s", (id_usuario,))
         conn.commit()
         return cursor.rowcount > 0
-    except pymysql.err.IntegrityError:
-        print("No se puede eliminar el usuario (tiene datos asociados)")
-        conn.rollback()
-        return False
     except Exception as e:
         print(f"Error al eliminar usuario: {e}")
         conn.rollback()
@@ -46,19 +56,16 @@ def eliminar_usuario(id_usuario):
         conn.close()
 
 
-# ---------- NUEVO: gestión de perfil ----------
 def obtener_usuario(id_usuario):
+    """Ya no trae anio/division: los cursos se piden a membresias."""
     conn = obtener_conexion()
     if not conn:
         return None
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         cursor.execute("""
-            SELECT u.id, u.nombre, u.email, u.rol, u.estado, u.id_curso, u.avatar,
-                c.anio, c.division
-            FROM Usuario u
-            LEFT JOIN Curso c ON u.id_curso = c.id
-            WHERE u.id = %s
+            SELECT id, nombre, email, rol, estado, avatar
+            FROM Usuario WHERE id = %s
         """, (id_usuario,))
         return cursor.fetchone()
     except Exception as e:
@@ -68,6 +75,9 @@ def obtener_usuario(id_usuario):
         cursor.close()
         conn.close()
 
+# actualizar_perfil() / cambiar_estado_usuario() / cambiar_rol_usuario() -> SIN CAMBIOS
+# ❌ ELIMINADAS: ascender_a_moderador(), descender_a_alumno()
+#    (reemplazadas por membresias.cambiar_rol_en_curso)
 
 def actualizar_perfil(id_usuario, nombre=None, avatar=None):
     """Actualiza nombre y/o avatar. Devuelve True/False."""
@@ -104,52 +114,6 @@ def actualizar_perfil(id_usuario, nombre=None, avatar=None):
     finally:
         cursor.close()
         conn.close()
-
-def ascender_a_moderador(id_usuario, id_curso):
-    """Vuelve moderador a un alumno, solo si pertenece al curso indicado."""
-    conn = obtener_conexion()
-    if not conn:
-        return False
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "UPDATE Usuario SET rol = 'moderador' WHERE id = %s AND id_curso = %s AND rol = 'alumno'",
-            (id_usuario, id_curso),
-        )
-        conn.commit()
-        return cursor.rowcount > 0
-    except Exception as e:
-        print(f"Error al ascender a moderador: {e}")
-        conn.rollback()
-        return False
-    finally:
-        cursor.close()
-        conn.close()
-
-
-def descender_a_alumno(id_usuario, id_curso, id_creador):
-    """Baja un moderador a alumno. No permite descender al creador del curso."""
-    if int(id_usuario) == int(id_creador):
-        return False
-    conn = obtener_conexion()
-    if not conn:
-        return False
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "UPDATE Usuario SET rol = 'alumno' WHERE id = %s AND id_curso = %s AND rol = 'moderador'",
-            (id_usuario, id_curso),
-        )
-        conn.commit()
-        return cursor.rowcount > 0
-    except Exception as e:
-        print(f"Error al descender a alumno: {e}")
-        conn.rollback()
-        return False
-    finally:
-        cursor.close()
-        conn.close()
-
 
 def cambiar_estado_usuario(id_usuario, nuevo_estado):
     """Bloquea o activa un usuario. nuevo_estado: 'activo' o 'bloqueado'."""

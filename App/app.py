@@ -1,36 +1,39 @@
 import os
-import re
-import pymysql
-from flask import Flask, render_template, request, redirect, url_for, make_response, jsonify, send_file
+import datetime
+import jwt as pyjwt
+from flask import (Flask, render_template, request, redirect, url_for,
+                   make_response, jsonify, send_file)
 from werkzeug.utils import secure_filename
 from modulos.auth import (
-    login, registrar_usuario, generar_token_jwt, verificar_token_jwt,
+    login, registrar_usuario, generar_token_jwt, verificar_token_jwt, JWT_SECRET,
 )
 from modulos.validacion import (
     validar_contraseña, validar_nombre_usuario, validar_email,
 )
 from modulos.cursos import (
     crear_curso, editar_curso, listar_cursos, eliminar_curso,
-    obtener_curso, listar_alumnos_curso,
-    unir_usuario_a_curso, salir_de_curso,
+    obtener_curso, obtener_curso_por_codigo,
+)
+from modulos.membresias import (
+    listar_cursos_de_usuario, pertenece_a_curso, rol_en_curso,
+    agregar_miembro, quitar_miembro, cambiar_rol_en_curso,
+    listar_miembros_curso,
 )
 from modulos.materias import (
     crear_materia, editar_materia, listar_materias_por_curso,
     eliminar_materia, obtener_materia,
 )
 from modulos.usuarios import (
-    listar_usuarios, eliminar_usuario,
-    obtener_usuario, actualizar_perfil, ascender_a_moderador, descender_a_alumno,
+    listar_usuarios, eliminar_usuario, obtener_usuario, actualizar_perfil,
     cambiar_estado_usuario, cambiar_rol_usuario,
 )
 from modulos.apuntes import (
     crear_apunte, agregar_archivo_apunte, listar_apuntes_por_materia,
     listar_apuntes_pendientes, cambiar_estado_apunte,
-    obtener_apunte, eliminar_apunte,
+    obtener_apunte, eliminar_apunte, apunte_pertenece_a_cursos,
 )
 from modulos.valoraciones import (
     calificar_apunte, alternar_guardado, listar_guardados, obtener_promedio,
-    alternar_me_gusta, contar_me_gusta,
 )
 from modulos.busqueda import buscar_apuntes
 from modulos.recuperacion import (
@@ -51,7 +54,6 @@ app.secret_key = os.environ.get("KIROKU_SECRET_KEY", "kiroku_secret_key_2026_mit
 
 JWT_COOKIE = "kiroku_token"
 
-# ---------- Config de subida de archivos ----------
 UPLOAD_APUNTES = os.path.join(app.static_folder, "uploads", "apuntes")
 os.makedirs(UPLOAD_APUNTES, exist_ok=True)
 os.makedirs(os.path.join(app.static_folder, "uploads", "avatares"), exist_ok=True)
@@ -60,7 +62,6 @@ EXT_APUNTES = {"pdf", "png", "jpg", "jpeg", "docx", "doc", "txt", "pptx"}
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 
-# ---------- Headers de seguridad ----------
 @app.after_request
 def agregar_headers_seguridad(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -74,9 +75,9 @@ def extension_ok(nombre, permitidas):
     return "." in nombre and nombre.rsplit(".", 1)[1].lower() in permitidas
 
 
-# ---------- Helpers JWT ----------
+# ==================== HELPERS JWT / PERMISOS ====================
+
 def _obtener_usuario_jwt():
-    """Lee el JWT de la cookie y devuelve el payload (dict) o None."""
     token = request.cookies.get(JWT_COOKIE)
     if not token:
         return None
@@ -95,39 +96,39 @@ def requiere_admin():
     return _usuario_actual().get("rol") == "admin"
 
 
-def es_mi_curso(id_curso):
-    u = _usuario_actual()
-    if u.get("rol") == "admin":
-        return True
-    if u.get("rol") != "moderador":
-        return False
-    return str(u.get("id_curso")) == str(id_curso)
-
-
-def puede_ver_materia(id_curso):
-    u = _usuario_actual()
-    if u.get("rol") == "admin":
-        return True
-    return str(u.get("id_curso")) == str(id_curso)
-
-
 def _ip_cliente():
     return request.headers.get("X-Forwarded-For", request.remote_addr)
 
 
-def _obtener_curso_por_codigo(codigo):
-    """Busca un curso por su código de invitación alfanumérico."""
-    from db.conexion import obtener_conexion
-    conn = obtener_conexion()
-    if not conn:
-        return None
-    cursor = conn.cursor(pymysql.cursors.DictCursor)
-    try:
-        cursor.execute("SELECT id, anio, division FROM Curso WHERE codigo_invitacion = %s", (codigo,))
-        return cursor.fetchone()
-    finally:
-        cursor.close()
-        conn.close()
+# ---------- PERMISOS MULTI-CURSO (siempre contra la BD) ----------
+
+def es_miembro(id_curso):
+    """El usuario actual pertenece al curso (o es admin global)."""
+    u = _usuario_actual()
+    if not u:
+        return False
+    if u.get("rol") == "admin":
+        return True
+    return pertenece_a_curso(u["id"], id_curso)
+
+
+def es_moderador_de(id_curso):
+    """El usuario actual modera ese curso (o es admin global)."""
+    u = _usuario_actual()
+    if not u:
+        return False
+    if u.get("rol") == "admin":
+        return True
+    return rol_en_curso(u["id"], id_curso) == "moderador"
+
+
+# Alias retrocompatibles con el código previo
+def puede_ver_materia(id_curso):
+    return es_miembro(id_curso)
+
+
+def es_mi_curso(id_curso):
+    return es_moderador_de(id_curso)
 
 
 @app.context_processor
@@ -135,12 +136,29 @@ def inyectar_usuario():
     u = _usuario_actual()
     if not u:
         return {}
+    mis_cursos = [] if u.get("rol") == "admin" else listar_cursos_de_usuario(u["id"])
+    if u.get("rol") == "admin":
+        mis_cursos = listar_cursos_de_usuario(u["id"])
     return {
         "session_avatar": u.get("avatar") or "uploads/avatares/no_avatar.png",
         "nombre": u.get("nombre"),
         "rol": u.get("rol"),
-        "session_id_curso": u.get("id_curso"),
+        "mis_cursos": mis_cursos,
     }
+
+
+def _refrescar_token(id_usuario):
+    """Regenera el JWT con los datos frescos del usuario (sin id_curso)."""
+    u = obtener_usuario(id_usuario)
+    if not u:
+        return None
+    return generar_token_jwt(u)
+
+
+def _cookie_token(resp, token):
+    resp.set_cookie(JWT_COOKIE, token, httponly=True, samesite="Lax", max_age=86400)
+    return resp
+
 
 # ====================== AUTH ======================
 
@@ -157,22 +175,15 @@ def registro():
         confirmar = request.form.get("confirmar_contraseña", "")
         email = request.form.get("email", "").strip()
 
-        # Validar nombre de usuario
-        ok_nombre, errores_nombre = validar_nombre_usuario(nombre)
+        ok_nombre, err = validar_nombre_usuario(nombre)
         if not ok_nombre:
-            return jsonify({"ok": False, "mensaje": "Usuario: " + " ".join(errores_nombre)})
-
-        # Validar email
-        ok_email, errores_email = validar_email(email)
+            return jsonify({"ok": False, "mensaje": "Usuario: " + " ".join(err)})
+        ok_email, err = validar_email(email)
         if not ok_email:
-            return jsonify({"ok": False, "mensaje": "Email: " + " ".join(errores_email)})
-
-        # Validar contraseña
-        ok_pass, errores_pass = validar_contraseña(contraseña)
+            return jsonify({"ok": False, "mensaje": "Email: " + " ".join(err)})
+        ok_pass, err = validar_contraseña(contraseña)
         if not ok_pass:
-            return jsonify({"ok": False, "mensaje": "Contraseña: " + " ".join(errores_pass)})
-
-        # Confirmar contraseña
+            return jsonify({"ok": False, "mensaje": "Contraseña: " + " ".join(err)})
         if contraseña != confirmar:
             return jsonify({"ok": False, "mensaje": "Las contraseñas no coinciden."})
 
@@ -189,7 +200,9 @@ def login_route():
         contraseña = request.form.get("contraseña", "")
         if not nombre or not contraseña:
             return jsonify({"ok": False, "mensaje": "Completá todos los campos."})
-        usuario = login(nombre, contraseña)
+        usuario, motivo = login(nombre, contraseña)
+        if motivo == "bloqueado":
+            return jsonify({"ok": False, "mensaje": "Tu cuenta está bloqueada. Contactá al administrador."})
         if usuario:
             token = generar_token_jwt(usuario)
             registrar_accion(usuario["id"], "login", "Inicio de sesión", _ip_cliente())
@@ -198,8 +211,7 @@ def login_route():
                 "mensaje": f"¡Bienvenido {usuario['nombre']}!",
                 "rol": usuario["rol"],
             }))
-            resp.set_cookie(JWT_COOKIE, token, httponly=True, samesite="Lax", max_age=86400)
-            return resp
+            return _cookie_token(resp, token)
         return jsonify({"ok": False, "mensaje": "Credenciales incorrectas."})
     return render_template("login.html")
 
@@ -214,7 +226,7 @@ def logout():
     return resp
 
 
-# ====================== RECUPERACIÓN DE CONTRASEÑA (RF-03) ======================
+# ============ RECUPERACIÓN DE CONTRASEÑA (sin cambios) ============
 
 @app.route("/recuperar", methods=["GET", "POST"])
 def recuperar():
@@ -224,16 +236,13 @@ def recuperar():
             return jsonify({"ok": False, "mensaje": "Ingresá tu email."})
         usuario = obtener_usuario_por_email(email)
         if not usuario:
-            return jsonify({"ok": True, "mensaje": "Si el email está registrado, recibiste un enlace de recuperación."})
+            return jsonify({"ok": True, "mensaje": "Si el email está registrado, recibiste un enlace."})
         token = generar_token(usuario["id"])
         if token:
             enlace = url_for("restablecer", token=token, _external=True)
-            print(f"\n{'='*60}")
-            print(f"RECUPERACIÓN DE CONTRASEÑA para {usuario['nombre']}")
-            print(f"Enlace: {enlace}")
-            print(f"{'='*60}\n")
+            print(f"\n{'='*60}\nRECUPERACIÓN para {usuario['nombre']}\nEnlace: {enlace}\n{'='*60}\n")
             return jsonify({"ok": True, "mensaje": f"Enlace de recuperación: {enlace}", "enlace": enlace})
-        return jsonify({"ok": True, "mensaje": "Si el email está registrado, recibiste un enlace de recuperación."})
+        return jsonify({"ok": True, "mensaje": "Si el email está registrado, recibiste un enlace."})
     return render_template("recuperar.html")
 
 
@@ -241,13 +250,13 @@ def recuperar():
 def restablecer(token):
     from modulos.recuperacion import validar_token
     if request.method == "GET":
-        id_usuario = validar_token(token)
-        if not id_usuario:
+        if not validar_token(token):
             return render_template("restablecer.html", token_invalido=True)
         return render_template("restablecer.html", token=token, token_invalido=False)
     contraseña = request.form.get("contraseña", "")
-    if len(contraseña) < 4:
-        return jsonify({"ok": False, "mensaje": "La contraseña debe tener al menos 4 caracteres."})
+    ok_pass, err = validar_contraseña(contraseña)
+    if not ok_pass:
+        return jsonify({"ok": False, "mensaje": "Contraseña: " + " ".join(err)})
     if resetear_contraseña(token, contraseña):
         return jsonify({"ok": True, "mensaje": "¡Contraseña actualizada! Ahora iniciá sesión."})
     return jsonify({"ok": False, "mensaje": "Token inválido o expirado."})
@@ -260,12 +269,9 @@ def home():
     if not requiere_login():
         return redirect(url_for("login_route"))
     u = _usuario_actual()
-    return render_template(
-        "home.html",
-        nombre=u.get("nombre"),
-        rol=u.get("rol"),
-        id_curso=u.get("id_curso"),
-    )
+    cursos = listar_cursos_de_usuario(u["id"])
+    return render_template("home.html", nombre=u.get("nombre"),
+                           rol=u.get("rol"), cursos=cursos)
 
 
 @app.route("/admin")
@@ -274,8 +280,7 @@ def panel_admin():
         return redirect(url_for("login_route"))
     if not requiere_admin():
         return "No tenés permisos", 403
-    u = _usuario_actual()
-    return render_template("admin.html", nombre=u.get("nombre"))
+    return render_template("admin.html", nombre=_usuario_actual().get("nombre"))
 
 
 @app.route("/admin/estadisticas")
@@ -284,16 +289,22 @@ def panel_estadisticas():
         return redirect(url_for("login_route"))
     if not requiere_admin():
         return "No tenés permisos", 403
-    u = _usuario_actual()
-    return render_template("estadisticas.html", nombre=u.get("nombre"))
+    return render_template("estadisticas.html", nombre=_usuario_actual().get("nombre"))
 
 
 @app.route("/descargar/<path:ruta>")
 def descargar_archivo(ruta):
-    """Endpoint que fuerza la descarga del archivo en vez de abrirlo."""
+    """Descarga validando que el archivo pertenezca a un curso del usuario."""
     if not requiere_login():
         return redirect(url_for("login_route"))
+    u = _usuario_actual()
     seguro = os.path.basename(ruta)
+
+    if u.get("rol") != "admin":
+        cursos = [c["id"] for c in listar_cursos_de_usuario(u["id"])]
+        if not cursos or not apunte_pertenece_a_cursos(f"uploads/apuntes/{seguro}", cursos):
+            return "No tenés acceso a este archivo", 403
+
     ruta_completa = os.path.join(app.static_folder, "uploads", "apuntes", seguro)
     if not os.path.isfile(ruta_completa):
         return "Archivo no encontrado", 404
@@ -304,17 +315,16 @@ def descargar_archivo(ruta):
 def estadisticas_curso(id_curso):
     if not requiere_login():
         return redirect(url_for("login_route"))
-    if not es_mi_curso(id_curso):
+    if not es_moderador_de(id_curso):
         return "No tenés acceso a las estadísticas de este curso", 403
-    curso = obtener_curso(id_curso)
-    return render_template("estadisticas_curso.html", curso=curso)
+    return render_template("estadisticas_curso.html", curso=obtener_curso(id_curso))
 
 
 @app.route("/curso/<int:id_curso>/stats", methods=["GET"])
 def curso_stats_api(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-    if not es_mi_curso(id_curso):
+    if not es_moderador_de(id_curso):
         return jsonify({"ok": False, "mensaje": "Sin permisos"}), 403
     return jsonify({
         "ok": True,
@@ -334,13 +344,16 @@ def pagina_curso(id_curso):
     curso = obtener_curso(id_curso)
     if not curso:
         return "El curso no existe", 404
-    puede_gestionar = es_mi_curso(id_curso)
+    if not es_miembro(id_curso):
+        return "No pertenecés a este curso", 403
+
     u = _usuario_actual()
     return render_template(
         "curso.html",
         curso=curso,
-        puede_gestionar=puede_gestionar,
+        puede_gestionar=es_moderador_de(id_curso),
         rol=u.get("rol"),
+        mi_rol_curso=rol_en_curso(u["id"], id_curso) or ("admin" if requiere_admin() else "alumno"),
         id_usuario_actual=u.get("id"),
     )
 
@@ -349,23 +362,18 @@ def pagina_curso(id_curso):
 def pagina_materia(id_materia):
     if not requiere_login():
         return redirect(url_for("login_route"))
-
     materia = obtener_materia(id_materia)
     if not materia:
         return "La materia no existe", 404
-
-    if not puede_ver_materia(materia["id_curso"]):
+    if not es_miembro(materia["id_curso"]):
         return "No tenés acceso a esta materia", 403
 
-    curso = obtener_curso(materia["id_curso"])
-    puede_gestionar = es_mi_curso(materia["id_curso"])
-    u = _usuario_actual()
     return render_template(
         "materia.html",
         materia=materia,
-        curso=curso,
-        puede_gestionar=puede_gestionar,
-        rol=u.get("rol"),
+        curso=obtener_curso(materia["id_curso"]),
+        puede_gestionar=es_moderador_de(materia["id_curso"]),
+        rol=_usuario_actual().get("rol"),
     )
 
 
@@ -376,8 +384,10 @@ def pagina_perfil():
     if not requiere_login():
         return redirect(url_for("login_route"))
     u = _usuario_actual()
-    usuario = obtener_usuario(u["id"])
-    return render_template("perfil.html", usuario=usuario, rol=u.get("rol"))
+    return render_template("perfil.html",
+                           usuario=obtener_usuario(u["id"]),
+                           cursos=listar_cursos_de_usuario(u["id"]),
+                           rol=u.get("rol"))
 
 
 AVATARES_VALIDOS = [f"avatar{i}.png" for i in range(0, 10)]
@@ -387,7 +397,6 @@ AVATARES_VALIDOS = [f"avatar{i}.png" for i in range(0, 10)]
 def perfil_actualizar():
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-
     u = _usuario_actual()
     nombre = request.form.get("nombre")
     avatar = request.form.get("avatar")
@@ -400,142 +409,125 @@ def perfil_actualizar():
 
     if actualizar_perfil(u["id"], nombre, avatar_ruta):
         registrar_accion(u["id"], "perfil_actualizado", f"Nombre: {nombre}", _ip_cliente())
-        from modulos.usuarios import obtener_usuario
-        u_fresco = obtener_usuario(u["id"])
-        nuevo_token = _refrescar_token_curso(u_fresco, u_fresco.get("id_curso"))
         resp = jsonify({"ok": True, "mensaje": "Perfil actualizado"})
-        resp.set_cookie(JWT_COOKIE, nuevo_token, httponly=True, samesite="Lax", max_age=86400)
-        return resp
-    return jsonify({"ok": False, "mensaje": "No se pudo actualizar el perfil, es posible que el nombre se repita"})
+        return _cookie_token(resp, _refrescar_token(u["id"]))
+    return jsonify({"ok": False, "mensaje": "No se pudo actualizar (¿el nombre ya existe?)"})
+
 
 # ====================== CURSOS (API) ======================
 
-@app.route("/cursos", methods=["GET"])
-def cursos_listar():
+@app.route("/mis-cursos", methods=["GET"])
+def mis_cursos_api():
+    """Todos los cursos del usuario logueado."""
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    return jsonify({"ok": True, "cursos": listar_cursos_de_usuario(_usuario_actual()["id"])})
+
+
+@app.route("/cursos", methods=["GET"])
+def cursos_listar():
+    """Listado global — solo admin."""
+    if not requiere_admin():
+        return jsonify({"ok": False, "mensaje": "No tenés permisos"}), 403
     return jsonify({"ok": True, "cursos": listar_cursos()})
 
 
 @app.route("/cursos/unirse", methods=["POST"])
 def cursos_unirse():
+    """Unirse a un curso SIN abandonar los anteriores."""
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
     u = _usuario_actual()
-    if u.get("id_curso"):
-        return jsonify({"ok": False, "mensaje": "Ya pertenecés a un curso. Salí primero."}), 400
 
-    codigo = request.form.get("codigo", "").strip()
+    codigo = request.form.get("codigo", "").strip().upper()
     if not codigo:
         return jsonify({"ok": False, "mensaje": "Ingresá un código de invitación"}), 400
 
-    curso = _obtener_curso_por_codigo(codigo)
+    curso = obtener_curso_por_codigo(codigo)
     if not curso:
         return jsonify({"ok": False, "mensaje": "Código inválido o curso no encontrado"}), 404
 
-    id_curso = curso["id"]
-    if unir_usuario_a_curso(u["id"], id_curso):
-        registrar_accion(u["id"], "curso_unido", f"Curso: {curso.get('anio')}° {curso.get('division')}° (ID: {id_curso})", _ip_cliente())
-        token = _refrescar_token_curso(u, id_curso)
-        resp = jsonify({"ok": True, "mensaje": "¡Te uniste al curso!", "id": id_curso})
-        resp.set_cookie(JWT_COOKIE, token, httponly=True, samesite="Lax", max_age=86400)
-        return resp
-    return jsonify({"ok": False, "mensaje": "No se pudo unir"})
+    resultado = agregar_miembro(u["id"], curso["id"], "alumno")
+    if resultado == "duplicado":
+        return jsonify({"ok": False, "mensaje": "Ya pertenecés a este curso"}), 409
+    if resultado:
+        registrar_accion(u["id"], "curso_unido",
+                         f"Curso {curso['anio']}°{curso['division']}° (ID: {curso['id']})", _ip_cliente())
+        return jsonify({"ok": True, "mensaje": "¡Te uniste al curso!", "id": curso["id"]})
+    return jsonify({"ok": False, "mensaje": "No se pudo unir al curso"}), 500
 
 
-@app.route("/cursos/salir", methods=["POST"])
-def cursos_salir():
+@app.route("/cursos/<int:id_curso>/salir", methods=["POST"])
+def cursos_salir(id_curso):
+    """Salir de UN curso específico (los demás se conservan)."""
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
     u = _usuario_actual()
-    if u.get("rol") == "admin":
-        return jsonify({"ok": False, "mensaje": "El admin no puede salir de un curso"}), 400
-    if not u.get("id_curso"):
-        return jsonify({"ok": False, "mensaje": "No estás en ningún curso"}), 400
 
-    if salir_de_curso(u["id"]):
-        registrar_accion(u["id"], "curso_salido", None, _ip_cliente())
-        token = _refrescar_token_curso(u, None, rol_forzado="alumno")
-        resp = jsonify({"ok": True, "mensaje": "Saliste del curso"})
-        resp.set_cookie(JWT_COOKIE, token, httponly=True, samesite="Lax", max_age=86400)
-        return resp
-    return jsonify({"ok": False, "mensaje": "No se pudo salir del curso"})
+    if not pertenece_a_curso(u["id"], id_curso):
+        return jsonify({"ok": False, "mensaje": "No pertenecés a este curso"}), 403
 
-
-def _refrescar_token_curso(usuario_actual, id_curso, rol_forzado=None):
-    """Genera un nuevo JWT con id_curso y rol actualizados."""
-    from modulos.auth import JWT_SECRET
-    import jwt as pyjwt
-    import datetime
-    payload = {
-        "id": usuario_actual["id"],
-        "nombre": usuario_actual["nombre"],
-        "rol": rol_forzado or usuario_actual.get("rol"),
-        "id_curso": id_curso,
-        "avatar": usuario_actual.get("avatar"),
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=24),
-        "iat": datetime.datetime.utcnow(),
-    }
-    return pyjwt.encode(payload, JWT_SECRET, algorithm="HS256")
+    resultado = quitar_miembro(u["id"], id_curso)
+    if resultado == "es_creador":
+        return jsonify({"ok": False, "mensaje": "Sos el creador del curso. Eliminalo en vez de salir."}), 400
+    if resultado:
+        registrar_accion(u["id"], "curso_salido", f"Curso ID: {id_curso}", _ip_cliente())
+        return jsonify({"ok": True, "mensaje": "Saliste del curso"})
+    return jsonify({"ok": False, "mensaje": "No se pudo salir del curso"}), 500
 
 
 @app.route("/cursos/<int:id_curso>", methods=["GET"])
 def curso_detalle(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    if not es_miembro(id_curso):
+        return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
     curso = obtener_curso(id_curso)
     if not curso:
         return jsonify({"ok": False, "mensaje": "El curso no existe"}), 404
-    return jsonify({
-        "ok": True,
-        "curso": curso,
-        "puede_gestionar": es_mi_curso(id_curso),
-    })
+    return jsonify({"ok": True, "curso": curso, "puede_gestionar": es_moderador_de(id_curso)})
 
 
 @app.route("/cursos/<int:id_curso>/alumnos", methods=["GET"])
 def curso_alumnos(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-    return jsonify({"ok": True, "alumnos": listar_alumnos_curso(id_curso)})
+    if not es_miembro(id_curso):
+        return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
+    return jsonify({"ok": True, "alumnos": listar_miembros_curso(id_curso)})
 
 
 @app.route("/cursos/crear", methods=["POST"])
 def cursos_crear():
+    """Crear un curso nuevo (se puede aunque ya tengas otros)."""
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
     u = _usuario_actual()
-    if u.get("id_curso"):
-        return jsonify({"ok": False, "mensaje": "Ya tenés un curso asignado"}), 400
 
     anio = request.form.get("anio")
-    division = request.form.get("division")
+    division = request.form.get("division", "").strip()
+
+    if not anio or not str(anio).isdigit() or not (1 <= int(anio) <= 7):
+        return jsonify({"ok": False, "mensaje": "El año debe ser un número entre 1 y 7"}), 400
+    if not division or len(division) > 25:
+        return jsonify({"ok": False, "mensaje": "División inválida"}), 400
 
     resultado = crear_curso(anio, division, u["id"])
     if resultado:
-        nuevo_id = resultado["id"]
-        registrar_accion(u["id"], "curso_creado", f"Curso: {anio}° {division}° (ID: {nuevo_id})", _ip_cliente())
-        token = _refrescar_token_curso(u, nuevo_id, rol_forzado="moderador")
-        resp = jsonify({
-            "ok": True,
-            "mensaje": "¡Curso creado! Ahora sos moderador.",
-            "id": nuevo_id,
-        })
-        resp.set_cookie(JWT_COOKIE, token, httponly=True, samesite="Lax", max_age=86400)
-        return resp
-    return jsonify({"ok": False, "mensaje": "Error al crear el curso"})
+        registrar_accion(u["id"], "curso_creado",
+                         f"Curso {anio}°{division}° (ID: {resultado['id']})", _ip_cliente())
+        return jsonify({"ok": True, "mensaje": "¡Curso creado! Sos moderador de este curso.",
+                        "id": resultado["id"], "codigo": resultado["codigo"]})
+    return jsonify({"ok": False, "mensaje": "Error al crear el curso"}), 500
 
 
 @app.route("/cursos/editar/<int:id_curso>", methods=["POST"])
 def cursos_editar(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-    if not es_mi_curso(id_curso):
+    if not es_moderador_de(id_curso):
         return jsonify({"ok": False, "mensaje": "No podés editar este curso"}), 403
-
-    anio = request.form.get("anio")
-    division = request.form.get("division")
-    if editar_curso(id_curso, anio, division):
+    if editar_curso(id_curso, request.form.get("anio"), request.form.get("division")):
         registrar_accion(_usuario_actual()["id"], "curso_editado", f"Curso ID: {id_curso}", _ip_cliente())
         return jsonify({"ok": True, "mensaje": "Curso actualizado"})
     return jsonify({"ok": False, "mensaje": "No se pudo actualizar"})
@@ -545,51 +537,65 @@ def cursos_editar(id_curso):
 def cursos_eliminar(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-    if not requiere_admin():
-        return jsonify({"ok": False, "mensaje": "Solo el admin puede borrar cursos"}), 403
+    u = _usuario_actual()
+    curso = obtener_curso(id_curso)
+    if not curso:
+        return jsonify({"ok": False, "mensaje": "El curso no existe"}), 404
+    if not requiere_admin() and curso["id_creador"] != u["id"]:
+        return jsonify({"ok": False, "mensaje": "Solo el creador o un admin pueden borrar el curso"}), 403
+
     if eliminar_curso(id_curso, UPLOAD_APUNTES):
-        registrar_accion(_usuario_actual()["id"], "curso_eliminado", f"Curso ID: {id_curso}", _ip_cliente())
+        registrar_accion(u["id"], "curso_eliminado", f"Curso ID: {id_curso}", _ip_cliente())
         return jsonify({"ok": True, "mensaje": "Curso eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
+
 
 @app.route("/cursos/<int:id_curso>/ascender", methods=["POST"])
 def curso_ascender(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-    if not es_mi_curso(id_curso):
+    if not es_moderador_de(id_curso):
         return jsonify({"ok": False, "mensaje": "No gestionás este curso"}), 403
 
     id_destino = request.form.get("id_usuario")
     if not id_destino:
         return jsonify({"ok": False, "mensaje": "Falta el usuario"}), 400
+    if not pertenece_a_curso(id_destino, id_curso):
+        return jsonify({"ok": False, "mensaje": "Ese usuario no pertenece al curso"}), 400
 
-    if ascender_a_moderador(id_destino, id_curso):
-        registrar_accion(_usuario_actual()["id"], "usuario_ascendido", f"Usuario {id_destino} → moderador en curso {id_curso}", _ip_cliente())
-        return jsonify({"ok": True, "mensaje": "¡Ahora es moderador!"})
+    if cambiar_rol_en_curso(id_destino, id_curso, "moderador"):
+        registrar_accion(_usuario_actual()["id"], "usuario_ascendido",
+                         f"Usuario {id_destino} → moderador en curso {id_curso}", _ip_cliente())
+        return jsonify({"ok": True, "mensaje": "¡Ahora es moderador de este curso!"})
     return jsonify({"ok": False, "mensaje": "No se pudo ascender (¿ya es moderador?)"})
+
 
 @app.route("/cursos/<int:id_curso>/descender", methods=["POST"])
 def curso_descender(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-    if not es_mi_curso(id_curso):
+    if not es_moderador_de(id_curso):
         return jsonify({"ok": False, "mensaje": "No gestionás este curso"}), 403
 
     u = _usuario_actual()
     curso = obtener_curso(id_curso)
     if not curso:
         return jsonify({"ok": False, "mensaje": "Curso no encontrado"}), 404
-    if u["id"] != curso["id_creador"]:
-        return jsonify({"ok": False, "mensaje": "Solo el creador del curso puede quitar moderadores"}), 403
+    if not requiere_admin() and u["id"] != curso["id_creador"]:
+        return jsonify({"ok": False, "mensaje": "Solo el creador puede quitar moderadores"}), 403
 
     id_destino = request.form.get("id_usuario")
     if not id_destino:
         return jsonify({"ok": False, "mensaje": "Falta el usuario"}), 400
+    if int(id_destino) == int(curso["id_creador"]):
+        return jsonify({"ok": False, "mensaje": "No se puede descender al creador del curso"}), 400
 
-    if descender_a_alumno(id_destino, id_curso, curso["id_creador"]):
-        registrar_accion(u["id"], "usuario_descendido", f"Usuario {id_destino} → alumno en curso {id_curso}", _ip_cliente())
-        return jsonify({"ok": True, "mensaje": "Ahora es alumno"})
-    return jsonify({"ok": False, "mensaje": "No se pudo descender (¿es el creador?)"})
+    if cambiar_rol_en_curso(id_destino, id_curso, "alumno"):
+        registrar_accion(u["id"], "usuario_descendido",
+                         f"Usuario {id_destino} → alumno en curso {id_curso}", _ip_cliente())
+        return jsonify({"ok": True, "mensaje": "Ahora es alumno en este curso"})
+    return jsonify({"ok": False, "mensaje": "No se pudo descender"})
+
 
 # ====================== MATERIAS (API) ======================
 
@@ -597,6 +603,8 @@ def curso_descender(id_curso):
 def materias_por_curso(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    if not es_miembro(id_curso):
+        return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
     return jsonify({"ok": True, "materias": listar_materias_por_curso(id_curso)})
 
 
@@ -604,16 +612,14 @@ def materias_por_curso(id_curso):
 def materias_crear():
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-
     id_curso = request.form.get("id_curso")
-    if not es_mi_curso(id_curso):
-        return jsonify({"ok": False, "mensaje": "Solo podés agregar materias a tu curso"}), 403
+    if not id_curso or not es_moderador_de(int(id_curso)):
+        return jsonify({"ok": False, "mensaje": "Solo podés agregar materias a un curso que moderás"}), 403
 
-    nombre = request.form.get("nombre")
-    nombre_profesor = request.form.get("profesor")
-    nuevo_id = crear_materia(nombre, id_curso, nombre_profesor)
+    nuevo_id = crear_materia(request.form.get("nombre"), id_curso, request.form.get("profesor"))
     if nuevo_id:
-        registrar_accion(_usuario_actual()["id"], "materia_creada", f"Materia: {nombre} en curso {id_curso}", _ip_cliente())
+        registrar_accion(_usuario_actual()["id"], "materia_creada",
+                         f"Materia en curso {id_curso}", _ip_cliente())
         return jsonify({"ok": True, "mensaje": "Materia creada", "id": nuevo_id})
     return jsonify({"ok": False, "mensaje": "Error al crear la materia"})
 
@@ -622,16 +628,13 @@ def materias_crear():
 def materias_editar(id_materia):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-
     materia = obtener_materia(id_materia)
     if not materia:
         return jsonify({"ok": False, "mensaje": "La materia no existe"}), 404
-    if not es_mi_curso(materia["id_curso"]):
-        return jsonify({"ok": False, "mensaje": "No podés editar materias de otro curso"}), 403
+    if not es_moderador_de(materia["id_curso"]):
+        return jsonify({"ok": False, "mensaje": "No podés editar materias de este curso"}), 403
 
-    nombre = request.form.get("nombre")
-    nombre_profesor = request.form.get("profesor")
-    if editar_materia(id_materia, nombre, nombre_profesor):
+    if editar_materia(id_materia, request.form.get("nombre"), request.form.get("profesor")):
         registrar_accion(_usuario_actual()["id"], "materia_editada", f"Materia ID: {id_materia}", _ip_cliente())
         return jsonify({"ok": True, "mensaje": "Materia actualizada"})
     return jsonify({"ok": False, "mensaje": "No se pudo actualizar"})
@@ -641,12 +644,11 @@ def materias_editar(id_materia):
 def materias_eliminar(id_materia):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-
     materia = obtener_materia(id_materia)
     if not materia:
         return jsonify({"ok": False, "mensaje": "La materia no existe"}), 404
-    if not es_mi_curso(materia["id_curso"]):
-        return jsonify({"ok": False, "mensaje": "No podés borrar materias de otro curso"}), 403
+    if not es_moderador_de(materia["id_curso"]):
+        return jsonify({"ok": False, "mensaje": "No podés borrar materias de este curso"}), 403
 
     if eliminar_materia(id_materia, UPLOAD_APUNTES):
         registrar_accion(_usuario_actual()["id"], "materia_eliminada", f"Materia ID: {id_materia}", _ip_cliente())
@@ -663,15 +665,15 @@ def apuntes_por_materia(id_materia):
     materia = obtener_materia(id_materia)
     if not materia:
         return jsonify({"ok": False, "mensaje": "La materia no existe"}), 404
-    if not puede_ver_materia(materia["id_curso"]):
+    if not es_miembro(materia["id_curso"]):
         return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
 
     u = _usuario_actual()
-    gestiona = es_mi_curso(materia["id_curso"])
-    apuntes = listar_apuntes_por_materia(id_materia, id_usuario=u["id"], solo_aprobados=not gestiona)
+    gestiona = es_moderador_de(materia["id_curso"])
     return jsonify({
         "ok": True,
-        "apuntes": apuntes,
+        "apuntes": listar_apuntes_por_materia(id_materia, id_usuario=u["id"],
+                                              solo_aprobados=not gestiona),
         "id_usuario": u["id"],
         "puede_gestionar": gestiona,
     })
@@ -687,26 +689,25 @@ def apuntes_crear():
     materia = obtener_materia(id_materia) if id_materia else None
     if not materia:
         return jsonify({"ok": False, "mensaje": "Materia inválida"}), 404
-    if not puede_ver_materia(materia["id_curso"]):
+    if not es_miembro(materia["id_curso"]):
         return jsonify({"ok": False, "mensaje": "No pertenecés a este curso"}), 403
 
     titulo = request.form.get("titulo", "").strip()
     descripcion = request.form.get("descripcion", "")
-    archivos = request.files.getlist("archivo")
+    archivos = [a for a in request.files.getlist("archivo") if a and a.filename]
 
     if not titulo:
         return jsonify({"ok": False, "mensaje": "El título es obligatorio"}), 400
-
-    archivos = [a for a in archivos if a and a.filename]
-
     if not archivos:
         return jsonify({"ok": False, "mensaje": "Debés subir al menos un archivo"}), 400
-
     for archivo in archivos:
         if not extension_ok(archivo.filename, EXT_APUNTES):
-            return jsonify({"ok": False, "mensaje": f"Tipo de archivo no permitido: {archivo.filename}"}), 400
+            return jsonify({"ok": False, "mensaje": f"Tipo no permitido: {archivo.filename}"}), 400
 
-    id_apunte = crear_apunte(titulo, descripcion, u["id"], materia["id_curso"], id_materia, u.get("rol", "alumno"))
+    # El rol que define auto-aprobación es el rol EN ESE CURSO
+    rol_efectivo = "admin" if u.get("rol") == "admin" else (rol_en_curso(u["id"], materia["id_curso"]) or "alumno")
+
+    id_apunte = crear_apunte(titulo, descripcion, u["id"], materia["id_curso"], id_materia, rol_efectivo)
     if not id_apunte:
         return jsonify({"ok": False, "mensaje": "Error al crear el apunte"}), 500
 
@@ -717,9 +718,10 @@ def apuntes_crear():
         agregar_archivo_apunte(id_apunte, f"uploads/apuntes/{nombre_seguro}", tipo)
 
     registrar_accion(u["id"], "apunte_creado", f"Apunte '{titulo}' (ID: {id_apunte})", _ip_cliente())
-    if u.get("rol") in ("moderador", "admin"):
+    if rol_efectivo in ("moderador", "admin"):
         return jsonify({"ok": True, "mensaje": "¡Apunte subido y publicado!", "id": id_apunte})
     return jsonify({"ok": True, "mensaje": "¡Apunte subido! Queda pendiente de aprobación.", "id": id_apunte})
+
 
 @app.route("/apuntes/eliminar/<int:id_apunte>", methods=["POST"])
 def apuntes_eliminar(id_apunte):
@@ -730,8 +732,8 @@ def apuntes_eliminar(id_apunte):
     if not apunte:
         return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
 
-    es_autor = apunte["id_usuario_creador"] == u["id"]
-    if not (es_autor or es_mi_curso(apunte["id_curso"])):
+    es_autor = apunte["id_usuario_creador"] == u["id"] and es_miembro(apunte["id_curso"])
+    if not (es_autor or es_moderador_de(apunte["id_curso"])):
         return jsonify({"ok": False, "mensaje": "No podés borrar este apunte"}), 403
 
     if eliminar_apunte(id_apunte, UPLOAD_APUNTES):
@@ -739,32 +741,47 @@ def apuntes_eliminar(id_apunte):
         return jsonify({"ok": True, "mensaje": "Apunte eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
+
 @app.route("/buscar", methods=["GET"])
 def buscar():
+    """Busca SIEMPRE dentro de un curso concreto (?id_curso=N)."""
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-
     u = _usuario_actual()
-    id_curso = u.get("id_curso")
+
+    id_curso = request.args.get("id_curso")
     if not id_curso:
-        return jsonify({"ok": False, "mensaje": "No pertenecés a ningún curso", "apuntes": []})
+        return jsonify({"ok": False, "mensaje": "Falta el curso", "apuntes": []}), 400
+    try:
+        id_curso = int(id_curso)
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "mensaje": "Curso inválido", "apuntes": []}), 400
 
-    texto = request.args.get("q", "")
-    orden = request.args.get("orden", "recientes")
+    if not es_miembro(id_curso):
+        return jsonify({"ok": False, "mensaje": "No pertenecés a este curso", "apuntes": []}), 403
+
     materia_id = request.args.get("materia_id")
-    fecha_desde = request.args.get("fecha_desde")
-    fecha_hasta = request.args.get("fecha_hasta")
-
     if materia_id:
         try:
             materia_id = int(materia_id)
-        except (ValueError, TypeError):
+            m = obtener_materia(materia_id)
+            if not m or m["id_curso"] != id_curso:
+                materia_id = None  # evita filtrar por materia de otro curso
+        except (TypeError, ValueError):
             materia_id = None
 
-    apuntes = buscar_apuntes(id_curso, texto, orden, materia_id, fecha_desde, fecha_hasta)
+    apuntes = buscar_apuntes(
+        id_curso,
+        request.args.get("q", ""),
+        request.args.get("orden", "recientes"),
+        materia_id,
+        request.args.get("fecha_desde"),
+        request.args.get("fecha_hasta"),
+    )
     return jsonify({"ok": True, "apuntes": apuntes})
 
-# ====================== VALORACIONES (RF-07) ======================
+
+# ====================== VALORACIONES (estrellas + guardados) ======================
 
 @app.route("/apuntes/<int:id_apunte>/calificar", methods=["POST"])
 def apunte_calificar(id_apunte):
@@ -773,24 +790,19 @@ def apunte_calificar(id_apunte):
     apunte = obtener_apunte(id_apunte)
     if not apunte:
         return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
-    if not puede_ver_materia(apunte["id_curso"]):
+    if not es_miembro(apunte["id_curso"]):
         return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
 
-    u = _usuario_actual()
     try:
         estrellas = int(request.form.get("estrellas"))
     except (TypeError, ValueError):
         return jsonify({"ok": False, "mensaje": "Calificación inválida"}), 400
 
-    if calificar_apunte(u["id"], id_apunte, estrellas):
+    if calificar_apunte(_usuario_actual()["id"], id_apunte, estrellas):
         promedio, cantidad = obtener_promedio(id_apunte)
-        return jsonify({
-            "ok": True,
-            "mensaje": "¡Gracias por tu valoración!",
-            "promedio": promedio,
-            "cantidad": cantidad,
-            "mi_calificacion": estrellas,
-        })
+        return jsonify({"ok": True, "mensaje": "¡Gracias por tu valoración!",
+                        "promedio": promedio, "cantidad": cantidad,
+                        "mi_calificacion": estrellas})
     return jsonify({"ok": False, "mensaje": "No se pudo calificar"})
 
 
@@ -801,38 +813,14 @@ def apunte_guardar(id_apunte):
     apunte = obtener_apunte(id_apunte)
     if not apunte:
         return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
-    if not puede_ver_materia(apunte["id_curso"]):
+    if not es_miembro(apunte["id_curso"]):
         return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
 
-    u = _usuario_actual()
-    resultado = alternar_guardado(u["id"], id_apunte)
+    resultado = alternar_guardado(_usuario_actual()["id"], id_apunte)
     if resultado == "guardado":
         return jsonify({"ok": True, "mensaje": "Apunte guardado", "estado": "guardado"})
-    elif resultado == "quitado":
+    if resultado == "quitado":
         return jsonify({"ok": True, "mensaje": "Apunte quitado de guardados", "estado": "quitado"})
-    return jsonify({"ok": False, "mensaje": "No se pudo procesar"})
-
-
-# ====================== ME GUSTA (RF-07) ======================
-
-@app.route("/apuntes/<int:id_apunte>/me-gusta", methods=["POST"])
-def apunte_me_gusta(id_apunte):
-    if not requiere_login():
-        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-    apunte = obtener_apunte(id_apunte)
-    if not apunte:
-        return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
-    if not puede_ver_materia(apunte["id_curso"]):
-        return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
-
-    u = _usuario_actual()
-    resultado = alternar_me_gusta(u["id"], id_apunte)
-    if resultado == "gustado":
-        cantidad = contar_me_gusta(id_apunte)
-        return jsonify({"ok": True, "mensaje": "¡Me gusta!", "estado": "gustado", "cantidad": cantidad})
-    elif resultado == "quitado":
-        cantidad = contar_me_gusta(id_apunte)
-        return jsonify({"ok": True, "mensaje": "Like quitado", "estado": "quitado", "cantidad": cantidad})
     return jsonify({"ok": False, "mensaje": "No se pudo procesar"})
 
 
@@ -840,17 +828,16 @@ def apunte_me_gusta(id_apunte):
 def pagina_guardados():
     if not requiere_login():
         return redirect(url_for("login_route"))
-    u = _usuario_actual()
-    apuntes = listar_guardados(u["id"])
-    return render_template("guardados.html", apuntes=apuntes)
+    return render_template("guardados.html", apuntes=listar_guardados(_usuario_actual()["id"]))
 
-# ====================== MODERACIÓN DE APUNTES (RF-08) ======================
+
+# ====================== MODERACIÓN (RF-08) ======================
 
 @app.route("/cursos/<int:id_curso>/pendientes", methods=["GET"])
 def apuntes_pendientes(id_curso):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
-    if not es_mi_curso(id_curso):
+    if not es_moderador_de(id_curso):
         return jsonify({"ok": False, "mensaje": "No gestionás este curso"}), 403
     return jsonify({"ok": True, "apuntes": listar_apuntes_pendientes(id_curso)})
 
@@ -867,7 +854,7 @@ def apunte_rechazar(id_apunte):
     apunte = obtener_apunte(id_apunte)
     if not apunte:
         return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
-    if not es_mi_curso(apunte["id_curso"]):
+    if not es_moderador_de(apunte["id_curso"]):
         return jsonify({"ok": False, "mensaje": "No podés moderar este apunte"}), 403
 
     if eliminar_apunte(id_apunte, UPLOAD_APUNTES):
@@ -875,18 +862,20 @@ def apunte_rechazar(id_apunte):
         return jsonify({"ok": True, "mensaje": "Apunte rechazado y eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
+
 def _moderar_apunte(id_apunte, estado):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
     apunte = obtener_apunte(id_apunte)
     if not apunte:
         return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
-    if not es_mi_curso(apunte["id_curso"]):
+    if not es_moderador_de(apunte["id_curso"]):
         return jsonify({"ok": False, "mensaje": "No podés moderar este apunte"}), 403
     if cambiar_estado_apunte(id_apunte, estado):
         registrar_accion(_usuario_actual()["id"], f"apunte_{estado}", f"Apunte ID: {id_apunte}", _ip_cliente())
         return jsonify({"ok": True, "mensaje": f"Apunte {estado}"})
     return jsonify({"ok": False, "mensaje": "No se pudo actualizar"})
+
 
 # ====================== ADMIN (API) ======================
 
@@ -931,7 +920,7 @@ def admin_cambiar_rol(id_usuario):
     if cambiar_rol_usuario(id_usuario, nuevo_rol):
         registrar_accion(_usuario_actual()["id"], "rol_cambiado",
                          f"Usuario {id_usuario} → rol {nuevo_rol}", _ip_cliente())
-        return jsonify({"ok": True, "mensaje": f"Rol cambiado a {nuevo_rol}"})
+        return jsonify({"ok": True, "mensaje": f"Rol global cambiado a {nuevo_rol}"})
     return jsonify({"ok": False, "mensaje": "No se pudo cambiar el rol"})
 
 

@@ -38,6 +38,9 @@ def estadisticas_generales():
         cursor.execute("SELECT COUNT(*) FROM apunte WHERE estado = 'rechazado'")
         stats["apuntes_rechazados"] = cursor.fetchone()[0]
 
+        cursor.execute("SELECT COUNT(*) FROM usuario_curso")
+        stats["total_inscripciones"] = cursor.fetchone()[0]
+
         return stats
     except Exception as e:
         print(f"Error al obtener estadísticas: {e}")
@@ -178,48 +181,36 @@ def apuntes_por_fecha(dias=30):
 # ==================== ESTADÍSTICAS POR CURSO (MODERADOR) ====================
 
 def stats_curso_resumen(id_curso):
-    """Resumen general de un curso específico."""
+    """Resumen de un curso. SIN métrica de likes."""
     conn = obtener_conexion()
     if not conn:
         return {}
     cursor = conn.cursor()
     try:
         stats = {}
-        cursor.execute("SELECT COUNT(*) FROM Usuario WHERE id_curso = %s", (id_curso,))
+        # Miembros ahora se cuentan desde usuario_curso
+        cursor.execute("SELECT COUNT(*) FROM usuario_curso WHERE id_curso=%s", (id_curso,))
         stats["total_alumnos"] = cursor.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM Materia WHERE id_curso = %s", (id_curso,))
+        cursor.execute("SELECT COUNT(*) FROM Materia WHERE id_curso=%s", (id_curso,))
         stats["total_materias"] = cursor.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM Apunte WHERE id_curso = %s", (id_curso,))
+        cursor.execute("SELECT COUNT(*) FROM Apunte WHERE id_curso=%s", (id_curso,))
         stats["total_apuntes"] = cursor.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM Apunte WHERE id_curso = %s AND estado='aprobado'", (id_curso,))
-        stats["aprobados"] = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM Apunte WHERE id_curso = %s AND estado='pendiente'", (id_curso,))
-        stats["pendientes"] = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM Apunte WHERE id_curso = %s AND estado='rechazado'", (id_curso,))
-        stats["rechazados"] = cursor.fetchone()[0]
+        for est in ("aprobado", "pendiente", "rechazado"):
+            cursor.execute("SELECT COUNT(*) FROM Apunte WHERE id_curso=%s AND estado=%s",
+                           (id_curso, est))
+            stats[est + "s"] = cursor.fetchone()[0]
 
         cursor.execute("""
-            SELECT ROUND(AVG(cal.calificacion), 1)
-            FROM Calificacion cal
-            JOIN Apunte a ON cal.id_apunte = a.id
-            WHERE a.id_curso = %s
+            SELECT ROUND(AVG(cal.calificacion),1) FROM Calificacion cal
+            JOIN Apunte a ON cal.id_apunte = a.id WHERE a.id_curso=%s
         """, (id_curso,))
         row = cursor.fetchone()
         stats["promedio_valoracion"] = row[0] if row and row[0] else 0
 
-        cursor.execute("""
-            SELECT COUNT(DISTINCT g.id_usuario)
-            FROM me_gusta g
-            JOIN Apunte a ON g.id_apunte = a.id
-            WHERE a.id_curso = %s
-        """, (id_curso,))
-        stats["total_me_gusta"] = cursor.fetchone()[0]
-
+        # ❌ eliminado: stats["total_me_gusta"]
         return stats
     except Exception as e:
         print(f"Error stats_curso_resumen: {e}")

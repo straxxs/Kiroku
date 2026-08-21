@@ -15,7 +15,16 @@ function cargarUsuarios() {
             }
 
             data.usuarios.forEach(u => {
-                const curso = u.anio ? `${u.anio}° ${u.division}°` : "-";
+                const cursos = u.cant_cursos > 0
+                    ? `${escapeHtml(u.cursos)} <small>(${u.cant_cursos})</small>`
+                    : "-";
+
+                tr.innerHTML = `
+                    <td data-label="Nombre">...</td>
+                    <td data-label="Rol global">...</td>
+                    <td data-label="Estado">${estadoBadge}</td>
+                    <td data-label="Cursos">${cursos}</td>
+                    <td data-label="Acciones" class="acciones">...</td>`;
                 const tr = document.createElement("tr");
                 const estadoBadge = u.estado === "bloqueado"
                     ? '<span class="badge-rol rol-admin">bloqueado</span>'

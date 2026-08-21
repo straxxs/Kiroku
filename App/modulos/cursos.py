@@ -6,37 +6,45 @@ from db.conexion import obtener_conexion
 
 
 def _generar_codigo_invitacion():
-    """Genera un código de invitación alfanumérico tipo XXXX-XXXX."""
     chars = string.ascii_uppercase + string.digits
-    parte1 = ''.join(secrets.choice(chars) for _ in range(4))
-    parte2 = ''.join(secrets.choice(chars) for _ in range(4))
-    return f"{parte1}-{parte2}"
+    p1 = ''.join(secrets.choice(chars) for _ in range(4))
+    p2 = ''.join(secrets.choice(chars) for _ in range(4))
+    return f"{p1}-{p2}"
 
 
 def crear_curso(anio, division, id_creador):
-    """Crea el curso, asigna el curso al usuario y lo vuelve moderador."""
-    if not anio or not division:
-        return False
-    if not str(anio).isdigit():
+    """
+    Crea el curso y registra al creador como MODERADOR en usuario_curso.
+    Ya NO toca usuario.id_curso ni usuario.rol (multi-curso).
+    """
+    if not anio or not division or not str(anio).isdigit():
         return False
 
     conn = obtener_conexion()
     if not conn:
         return False
-
     cursor = conn.cursor()
     try:
-        codigo = _generar_codigo_invitacion()
+        # Código único (reintentos por colisión improbable)
+        for _ in range(5):
+            codigo = _generar_codigo_invitacion()
+            cursor.execute("SELECT 1 FROM Curso WHERE codigo_invitacion = %s", (codigo,))
+            if not cursor.fetchone():
+                break
+        else:
+            return False
+
         cursor.execute(
-            "INSERT INTO Curso(anio, division, id_creador, codigo_invitacion) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO Curso(anio, division, id_creador, codigo_invitacion) VALUES (%s,%s,%s,%s)",
             (anio, division, id_creador, codigo),
         )
         nuevo_id = cursor.lastrowid
 
-        cursor.execute(
-            "UPDATE Usuario SET id_curso = %s, rol = 'moderador' WHERE id = %s",
-            (nuevo_id, id_creador),
-        )
+        # El creador entra como moderador DE ESE CURSO
+        cursor.execute("""
+            INSERT INTO usuario_curso (id_usuario, id_curso, rol_curso)
+            VALUES (%s, %s, 'moderador')
+        """, (id_creador, nuevo_id))
 
         conn.commit()
         return {"id": nuevo_id, "codigo": codigo}
@@ -50,16 +58,15 @@ def crear_curso(anio, division, id_creador):
 
 
 def editar_curso(id_curso, anio, division):
+    if not anio or not str(anio).isdigit() or not division:
+        return False
     conn = obtener_conexion()
     if not conn:
         return False
-
     cursor = conn.cursor()
     try:
-        cursor.execute(
-            "UPDATE Curso SET anio = %s, division = %s WHERE id = %s",
-            (anio, division, id_curso),
-        )
+        cursor.execute("UPDATE Curso SET anio=%s, division=%s WHERE id=%s",
+                       (anio, division, id_curso))
         conn.commit()
         return cursor.rowcount > 0
     except Exception as e:
@@ -72,14 +79,15 @@ def editar_curso(id_curso, anio, division):
 
 
 def listar_cursos():
+    """Listado global (solo admin)."""
     conn = obtener_conexion()
     if not conn:
         return []
-
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         cursor.execute("""
-            SELECT c.id, c.anio, c.division, c.id_creador, u.nombre AS creador
+            SELECT c.id, c.anio, c.division, c.id_creador, u.nombre AS creador,
+                   (SELECT COUNT(*) FROM usuario_curso uc WHERE uc.id_curso = c.id) AS cant_miembros
             FROM Curso c
             LEFT JOIN Usuario u ON c.id_creador = u.id
             ORDER BY c.anio, c.division
@@ -97,13 +105,12 @@ def obtener_curso(id_curso):
     conn = obtener_conexion()
     if not conn:
         return None
-
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         cursor.execute("""
-            SELECT c.id, c.anio, c.division, c.id_creador, c.codigo_invitacion, u.nombre AS creador
-            FROM Curso c
-            LEFT JOIN Usuario u ON c.id_creador = u.id
+            SELECT c.id, c.anio, c.division, c.id_creador, c.codigo_invitacion,
+                   u.nombre AS creador
+            FROM Curso c LEFT JOIN Usuario u ON c.id_creador = u.id
             WHERE c.id = %s
         """, (id_curso,))
         return cursor.fetchone()
@@ -115,149 +122,70 @@ def obtener_curso(id_curso):
         conn.close()
 
 
-def listar_alumnos_curso(id_curso):
+def obtener_curso_por_codigo(codigo):
     conn = obtener_conexion()
     if not conn:
-        return []
-
+        return None
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
-        cursor.execute("""
-            SELECT id, nombre, rol, avatar
-            FROM Usuario
-            WHERE id_curso = %s
-            ORDER BY rol DESC, nombre
-        """, (id_curso,))
-        return cursor.fetchall()
+        cursor.execute(
+            "SELECT id, anio, division FROM Curso WHERE codigo_invitacion = %s", (codigo,))
+        return cursor.fetchone()
     except Exception as e:
-        print(f"Error al listar alumnos: {e}")
-        return []
+        print(f"Error al buscar curso por código: {e}")
+        return None
     finally:
         cursor.close()
         conn.close()
 
 
 def eliminar_curso(id_curso, carpeta_apuntes):
+    """Elimina el curso y todo su contenido. usuario_curso cae por CASCADE."""
     conn = obtener_conexion()
     if not conn:
         return False
-
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
-        # 1. Rutas de archivos de todos los apuntes del curso
         cursor.execute("""
-            SELECT af.ruta
-            FROM Archivo_Apunte af
-            JOIN Apunte a ON af.id_apunte = a.id
-            WHERE a.id_curso = %s
+            SELECT af.ruta FROM Archivo_Apunte af
+            JOIN Apunte a ON af.id_apunte = a.id WHERE a.id_curso = %s
         """, (id_curso,))
-        rutas = [fila["ruta"] for fila in cursor.fetchall()]
+        rutas = [f["ruta"] for f in cursor.fetchall()]
 
-        # 2. Borrar archivos (BD)
-        cursor.execute("""
-            DELETE af FROM Archivo_Apunte af
-            JOIN Apunte a ON af.id_apunte = a.id
-            WHERE a.id_curso = %s
-        """, (id_curso,))
+        cursor.execute("""DELETE af FROM Archivo_Apunte af
+                          JOIN Apunte a ON af.id_apunte=a.id WHERE a.id_curso=%s""", (id_curso,))
+        cursor.execute("""DELETE c FROM Calificacion c
+                          JOIN Apunte a ON c.id_apunte=a.id WHERE a.id_curso=%s""", (id_curso,))
+        cursor.execute("""DELETE g FROM Guardado g
+                          JOIN Apunte a ON g.id_apunte=a.id WHERE a.id_curso=%s""", (id_curso,))
+        # (bloque me_gusta eliminado — la tabla ya no existe)
+        cursor.execute("DELETE FROM Apunte WHERE id_curso=%s", (id_curso,))
+        cursor.execute("DELETE FROM Materia WHERE id_curso=%s", (id_curso,))
 
-        # 2b. Borrar calificaciones, guardados y me_gusta de esos apuntes
-        cursor.execute("""
-            DELETE c FROM Calificacion c
-            JOIN Apunte a ON c.id_apunte = a.id
-            WHERE a.id_curso = %s
-        """, (id_curso,))
-        cursor.execute("""
-            DELETE g FROM Guardado g
-            JOIN Apunte a ON g.id_apunte = a.id
-            WHERE a.id_curso = %s
-        """, (id_curso,))
-        cursor.execute("""
-            DELETE mg FROM me_gusta mg
-            JOIN Apunte a ON mg.id_apunte = a.id
-            WHERE a.id_curso = %s
-        """, (id_curso,))
+        # Membresías (explícito, aunque haya ON DELETE CASCADE)
+        cursor.execute("DELETE FROM usuario_curso WHERE id_curso=%s", (id_curso,))
 
-        # 3. Borrar apuntes del curso
-        cursor.execute("DELETE FROM Apunte WHERE id_curso = %s", (id_curso,))
+        # Legacy: limpiar el campo viejo si todavía existe
+        try:
+            cursor.execute("UPDATE Usuario SET id_curso = NULL WHERE id_curso = %s", (id_curso,))
+        except Exception:
+            pass
 
-        # 4. Borrar materias del curso
-        cursor.execute("DELETE FROM Materia WHERE id_curso = %s", (id_curso,))
-
-        # 5. Soltar usuarios: sacarles el curso y bajar moderadores a alumno
-        cursor.execute("""
-            UPDATE Usuario
-            SET id_curso = NULL,
-                rol = IF(rol = 'moderador', 'alumno', rol)
-            WHERE id_curso = %s
-        """, (id_curso,))
-
-        # 6. Borrar el curso
-        cursor.execute("DELETE FROM Curso WHERE id = %s", (id_curso,))
+        cursor.execute("DELETE FROM Curso WHERE id=%s", (id_curso,))
+        borrado = cursor.rowcount > 0
         conn.commit()
 
-        # 7. Borrar archivos físicos
         for ruta in rutas:
-            nombre = os.path.basename(ruta)
-            ruta_completa = os.path.join(carpeta_apuntes, nombre)
-            if os.path.exists(ruta_completa):
+            completa = os.path.join(carpeta_apuntes, os.path.basename(ruta))
+            if os.path.exists(completa):
                 try:
-                    os.remove(ruta_completa)
+                    os.remove(completa)
                 except OSError as e:
-                    print(f"No se pudo borrar {ruta_completa}: {e}")
+                    print(f"No se pudo borrar {completa}: {e}")
 
-        return cursor.rowcount > 0
+        return borrado
     except Exception as e:
         print(f"Error al eliminar curso: {e}")
-        conn.rollback()
-        return False
-    finally:
-        cursor.close()
-        conn.close()
-
-def unir_usuario_a_curso(id_usuario, id_curso):
-    """El alumno se une a un curso existente. No cambia su rol (sigue siendo alumno)."""
-    conn = obtener_conexion()
-    if not conn:
-        return False
-
-    cursor = conn.cursor()
-    try:
-        # Verificar que el curso exista
-        cursor.execute("SELECT id FROM Curso WHERE id = %s", (id_curso,))
-        if not cursor.fetchone():
-            return False
-
-        cursor.execute(
-            "UPDATE Usuario SET id_curso = %s WHERE id = %s",
-            (id_curso, id_usuario),
-        )
-        conn.commit()
-        return cursor.rowcount > 0
-    except Exception as e:
-        print(f"Error al unir usuario a curso: {e}")
-        conn.rollback()
-        return False
-    finally:
-        cursor.close()
-        conn.close()
-
-
-def salir_de_curso(id_usuario):
-    """El usuario deja su curso actual. Si era moderador, vuelve a alumno."""
-    conn = obtener_conexion()
-    if not conn:
-        return False
-
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "UPDATE Usuario SET id_curso = NULL, rol = 'alumno' WHERE id = %s AND rol != 'admin'",
-            (id_usuario,),
-        )
-        conn.commit()
-        return cursor.rowcount > 0
-    except Exception as e:
-        print(f"Error al salir del curso: {e}")
         conn.rollback()
         return False
     finally:

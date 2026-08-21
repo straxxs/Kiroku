@@ -56,12 +56,14 @@ def migrar_hash_si_es_necesario(contraseña, hash_viejo, id_usuario):
 
 
 def generar_token_jwt(usuario):
-    """Genera un JWT con los datos del usuario."""
+    """
+    Genera un JWT. NO incluye id_curso: con multi-curso la pertenencia
+    se valida siempre contra la tabla usuario_curso en la BD.
+    """
     payload = {
         "id": usuario["id"],
         "nombre": usuario["nombre"],
-        "rol": usuario["rol"],
-        "id_curso": usuario.get("id_curso"),
+        "rol": usuario["rol"],          # rol GLOBAL (solo importa 'admin')
         "avatar": usuario.get("avatar"),
         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=JWT_EXPIRACION_HORAS),
         "iat": datetime.datetime.utcnow(),
@@ -104,24 +106,40 @@ def registrar_usuario(nombre, contraseña, email):
 
 
 def login(nombre_o_email, contraseña):
+    """
+    Autentica por nombre de usuario O email.
+
+    Devuelve SIEMPRE una tupla de 2 elementos:
+        (usuario_dict | None, motivo)
+
+    motivo ∈ {"ok", "no_existe", "clave", "bloqueado", "error"}
+    """
     conn = obtener_conexion()
     if not conn:
-        return False
+        return None, "error"
+
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
-        sql = "SELECT * FROM usuario WHERE nombre = %s OR email = %s"
-        cursor.execute(sql, (nombre_o_email, nombre_o_email))
+        cursor.execute(
+            "SELECT * FROM usuario WHERE nombre = %s OR email = %s",
+            (nombre_o_email, nombre_o_email),
+        )
         usuario = cursor.fetchone()
 
         if not usuario:
-            return False
+            return None, "no_existe"
 
+        if usuario.get("estado") == "bloqueado":
+            return None, "bloqueado"
+
+        # Verifica bcrypt y migra hashes SHA-256 legacy de forma transparente
         if migrar_hash_si_es_necesario(contraseña, usuario["contrasena"], usuario["id"]):
-            return usuario
-        return False
+            return usuario, "ok"
+
+        return None, "clave"
     except Exception as e:
         print(f"Error en login: {e}")
-        return False
+        return None, "error"
     finally:
         cursor.close()
         conn.close()

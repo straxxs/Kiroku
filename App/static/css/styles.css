@@ -492,3 +492,60 @@ form { margin: 0; }
     .btn-enviar, .badge, .spiral span, .doodles i, .doodles svg { animation: none; transition: none; }
     .toast { transition: none; }
 }
+
+/*===================CURSOS===============*/
+
+.lista-cursos {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.curso-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1.5px solid var(--borde);
+    border-radius: var(--radio);
+    border-left: 4px solid var(--celeste);
+    transition: transform 0.12s, box-shadow 0.12s;
+}
+.curso-item:hover {
+    transform: translateX(2px);
+    box-shadow: var(--sombra-sm);
+    border-left-color: var(--amarillo-dark);
+}
+
+.curso-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.curso-nombre {
+    font-family: 'Kalam', cursive;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--tinta);
+}
+
+.curso-acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Selector de curso en la búsqueda */
+#cursoBusqueda {
+    font-weight: 800;
+    border-color: var(--celeste);
+    background: var(--celeste-light);
+}
+
+@media (max-width: 768px) {
+    .curso-item { flex-direction: column; align-items: stretch; gap: 10px; }
+    .curso-acciones { justify-content: stretch; }
+    .curso-acciones .btn, .curso-acciones a { flex: 1; text-align: center; }
+}
+@media (max-width: 480px) {
+    .curso-nombre { font-size: 16px; }
+    .curso-item { padding: 10px 12px; }
+}

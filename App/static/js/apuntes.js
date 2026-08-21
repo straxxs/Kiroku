@@ -162,13 +162,6 @@ function cargarApuntes() {
                         </label>
                         `;
 
-                const btnMeGusta = `
-                    <button class="btn-megusta ${a.mi_me_gusta ? 'activo' : ''}"
-                        onclick="toggleMeGusta(${a.id}, this)" title="Me gusta">
-                        <span class="megusta-icono">${L("heart",18)}</span>
-                        <span class="megusta-count">${a.me_gusta_count || 0}</span>
-                    </button>`;
-
                 const div = document.createElement("div");
                 div.className = "card card-apunte";
                 div.id = `apunte-${a.id}`;
@@ -188,7 +181,6 @@ function cargarApuntes() {
                         <span class="valoracion-promedio">
                             ${a.promedio} / 5 (${a.cant_calificaciones})
                         </span>
-                        ${btnMeGusta}
                         ${btnGuardar}
                     </div>
 
@@ -353,27 +345,12 @@ function toggleGuardar(idApunte, checkbox) {
         });
 }
 
-// ---------- Me Gusta ----------
-function toggleMeGusta(idApunte, boton) {
-    fetch(`/apuntes/${idApunte}/me-gusta`, { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-            mostrarToast(data.mensaje, data.ok ? "ok" : "error");
-            if (data.ok) {
-                if (typeof sonidoLike === "function") sonidoLike();
-                boton.classList.toggle("activo", data.estado === "gustado");
-                const countEl = boton.querySelector(".megusta-count");
-                if (countEl) countEl.textContent = data.cantidad;
-            }
-        })
-        .catch(() => mostrarToast("Error de conexión", "error"));
-}
+
 
 cargarApuntes();
 
 window.calificar = calificar;
 window.toggleGuardar = toggleGuardar;
-window.toggleMeGusta = toggleMeGusta;
 window.borrarApunte = borrarApunte;
 window.abrirLightbox = abrirLightbox;
 

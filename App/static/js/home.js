@@ -1,7 +1,5 @@
 (function () {
-// ---------- Crear curso ----------
-const IC={"log-out":'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>'};
-function L(n,s){s=s||16;return `<svg class="luc" xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`}
+// ---------- Crear curso (sin abandonar los otros) ----------
 const formCurso = document.getElementById("formCurso");
 if (formCurso) {
     formCurso.addEventListener("submit", function (e) {
@@ -9,16 +7,16 @@ if (formCurso) {
         if (!this.reportValidity()) return;
         if (typeof sonidoEnviar === "function") sonidoEnviar();
         fetch("/cursos/crear", { method: "POST", body: new FormData(this) })
-            .then(res => res.json())
+            .then(r => r.json())
             .then(data => {
                 mostrarToast(data.mensaje, data.ok ? "ok" : "error");
-                if (data.ok) setTimeout(() => window.location.href = "/curso/" + data.id, 800);
+                if (data.ok) setTimeout(() => window.location.href = "/curso/" + data.id, 900);
             })
             .catch(() => mostrarToast("Hubo un error de conexión.", "error"));
     });
 }
 
-// ---------- Unirse a un curso ----------
+// ---------- Unirse a otro curso ----------
 const formUnirse = document.getElementById("formUnirse");
 if (formUnirse) {
     formUnirse.addEventListener("submit", function (e) {
@@ -26,28 +24,49 @@ if (formUnirse) {
         if (!this.reportValidity()) return;
         if (typeof sonidoEnviar === "function") sonidoEnviar();
         fetch("/cursos/unirse", { method: "POST", body: new FormData(this) })
-            .then(res => res.json())
+            .then(r => r.json())
             .then(data => {
                 mostrarToast(data.mensaje, data.ok ? "ok" : "error");
-                if (data.ok) setTimeout(() => window.location.href = "/curso/" + data.id, 800);
+                if (data.ok) setTimeout(() => window.location.href = "/curso/" + data.id, 900);
             })
             .catch(() => mostrarToast("Hubo un error de conexión.", "error"));
     });
 }
 
-// ---------- Salir del curso ----------
-const btnSalir = document.getElementById("btnSalir");
-if (btnSalir) {
-    btnSalir.addEventListener("click", async function () {
-        const ok = await kirokuConfirm(L("log-out", 20), "Salir del curso", "¿Seguro que querés salir de tu curso?", "Salir", "Quedarme");
+// ---------- Salir / Eliminar un curso PUNTUAL (delegación de eventos) ----------
+document.addEventListener("click", async function (e) {
+    const btnSalir = e.target.closest('[data-accion="salir-curso"]');
+    if (btnSalir) {
+        const id = btnSalir.dataset.curso;
+        const nombre = btnSalir.dataset.nombre;
+        const ok = await kirokuConfirm(L("log-out", 20), "Salir del curso",
+            `¿Salir de ${nombre}? Vas a conservar tus otros cursos.`, "Salir", "Quedarme");
         if (!ok) return;
-        fetch("/cursos/salir", { method: "POST" })
-            .then(res => res.json())
+        fetch(`/cursos/${id}/salir`, { method: "POST" })
+            .then(r => r.json())
             .then(data => {
                 mostrarToast(data.mensaje, data.ok ? "ok" : "error");
-                if (data.ok) setTimeout(() => window.location.reload(), 800);
+                if (data.ok) setTimeout(() => location.reload(), 800);
             })
-            .catch(() => mostrarToast("Hubo un error de conexión.", "error"));
-    });
-}
+            .catch(() => mostrarToast("Error de conexión", "error"));
+        return;
+    }
+
+    const btnEliminar = e.target.closest('[data-accion="eliminar-curso"]');
+    if (btnEliminar) {
+        const id = btnEliminar.dataset.curso;
+        const nombre = btnEliminar.dataset.nombre;
+        const ok = await kirokuConfirm(L("trash-2", 20), "Eliminar curso",
+            `Se eliminarán TODAS las materias, apuntes y archivos de ${nombre}. Los integrantes perderán el acceso. ¿Continuar?`,
+            "Eliminar", "Cancelar");
+        if (!ok) return;
+        fetch(`/cursos/eliminar/${id}`, { method: "POST" })
+            .then(r => r.json())
+            .then(data => {
+                mostrarToast(data.mensaje, data.ok ? "ok" : "error");
+                if (data.ok) setTimeout(() => location.reload(), 800);
+            })
+            .catch(() => mostrarToast("Error de conexión", "error"));
+    }
+});
 })();
