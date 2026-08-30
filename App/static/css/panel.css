@@ -155,7 +155,7 @@ svg.luc-star.big { width: 1.4em; height: 1.4em; }
     top: 52px;
     right: 0;
     background: var(--blanco);
-    border-radius: 2px;
+    border-radius: 8px;
     box-shadow: var(--sombra-lg);
     min-width: 200px;
     padding: 6px;
@@ -175,7 +175,7 @@ svg.luc-star.big { width: 1.4em; height: 1.4em; }
     text-decoration: none;
     font-weight: 600;
     font-size: 13.5px;
-    border-radius: 8px;
+    border-radius: 6px;
     transition: background var(--transicion);
 }
 .dropdown-menu a:hover { background: var(--crema); }
@@ -315,9 +315,11 @@ svg.luc-star.big { width: 1.4em; height: 1.4em; }
     font-size: 22px;
 }
 
-/* Las cards internas no llevan tachuela */
+/* Ocultar tachuela en tarjetas anidadas o hijas específicas */
 .card .card::before,
-.card .card::after { display: none; }
+.card .card::after,
+.card-apunte::before,
+.card-apunte::after { display: none; }
 
 .card-apunte { padding: 18px 22px; }
 .card-apunte h3 { margin: 4px 0 !important; font-size: 16px !important; }
@@ -334,38 +336,48 @@ svg.luc-star.big { width: 1.4em; height: 1.4em; }
 #resultadosBusqueda > .card { margin-bottom: 0; }
 
 /* ==================== FORMULARIOS ==================== */
-.campo { margin-bottom: 28px; }
+.campo { 
+    margin-bottom: 20px; 
+}
 
 .form-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    align-items: flex-end;
+    gap: 30px; /* Separación amplia e idéntica entre inputs y botón */
+    align-items: flex-end; /* Alinea los inputs y el botón por la base */
+    margin-bottom: 32px; /* Margen amplio para separar el formulario de la tabla */
 }
-.form-row .campo { flex: 1; min-width: 140px; }
+
+/* Anula el margen inferior de los campos dentro del row para no deslinear el botón */
+.form-row .campo { 
+    flex: 1; 
+    min-width: 160px; 
+    margin-bottom: 0; 
+}
 
 label {
     display: block;
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em; /* Mayor espaciado entre letras para mejor lectura */
     color: var(--celeste-dark);
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
 
 input, select {
     width: 100%;
     border: 2px solid var(--borde);
     border-radius: var(--radio);
-    padding: 9px 10px;
+    padding: 10px 12px; /* Un toque más de relleno interno */
     font-family: 'Nunito', sans-serif;
     font-size: 14px;
     font-weight: 600;
     color: var(--tinta);
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.7);
     transition: border-color var(--transicion), box-shadow var(--transicion);
 }
+
 input:focus, select:focus {
     outline: none;
     border-color: var(--celeste-dark);
@@ -408,11 +420,16 @@ input:focus, select:focus {
 .btn-chico { padding: 5px 10px; font-size: 13px; border-width: 2px; }
 
 /* ==================== TABLAS ==================== */
-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+table { 
+    width: 100%; 
+    border-collapse: separate; 
+    border-spacing: 0; 
+    margin-top: 12px; 
+}
 
 th, td {
     text-align: left;
-    padding: 10px 8px;
+    padding: 14px 16px; /* Aumentado para dar más espacio vertical y horizontal */
     border-bottom: 1px solid var(--borde);
     font-size: 13.5px;
     vertical-align: middle;
@@ -422,22 +439,27 @@ th {
     color: var(--celeste-dark);
     text-transform: uppercase;
     font-size: 11px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em; /* Un toque más de separación entre letras */
     font-weight: 800;
 }
 
 .card-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-.acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.acciones { 
+    display: flex; 
+    gap: 20px; /* Aumentado de 8px a 14px para separar los botones */
+    align-items: center;
+    flex-wrap: wrap; 
+}
 
 .vacio {
     color: var(--tinta-soft);
     font-style: italic;
-    padding: 12px 0;
+    padding: 16px 0;
     font-size: 13.5px;
 }
 
-/* ==================== BADGES DE ROL ==================== */
+/* ==================== BADGES DE ROL GENERALES ==================== */
 .badge-rol { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; }
 .rol-admin { background: var(--violeta-light); color: var(--violeta-dark); }
 .rol-moderador { background: var(--celeste-light); color: var(--celeste-dark); }
@@ -451,6 +473,100 @@ th {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* ==================== SECCIÓN DE CURSOS ==================== */
+.lista-cursos {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.curso-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: var(--blanco);
+    border: 2px solid var(--tinta);
+    border-radius: 8px;
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
+    transition: transform var(--transicion), box-shadow var(--transicion);
+}
+
+.curso-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.2);
+}
+
+.curso-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.curso-nombre {
+    font-family: 'Kalam', cursive;
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--tinta);
+    margin-right: 4px;
+}
+
+.badge-moderador {
+    background: var(--celeste-light);
+    color: var(--celeste-dark);
+}
+
+.badge-creador {
+    background: var(--violeta-light);
+    color: var(--violeta-dark);
+}
+
+.curso-acciones {
+    display: flex;
+    gap: 20px; /* Aumentado de 8px a 14px para dar más espacio entre botones */
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.btn-accion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Kalam', cursive;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--blanco);
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s, box-shadow 0.1s;
+    cursor: pointer;
+}
+
+.btn-accion:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.btn-entrar { background: var(--celeste); border-color: var(--celeste-dark); }
+.btn-stats { background: var(--amarillo); color: var(--tinta); border-color: var(--amarillo-dark); }
+.btn-eliminar { background: var(--rojo); border-color: var(--rojo-dark); }
+
+#cursoBusqueda {
+    font-weight: 800;
+    border-color: var(--celeste);
+    background: var(--celeste-light);
 }
 
 /* ==================== TOASTS ==================== */
@@ -530,11 +646,18 @@ th {
     width: 170px;
 }
 .preview-img { width: 100%; height: 100px; object-fit: cover; cursor: zoom-in; display: block; }
-.preview-pdf { width: 100%; height: 140px; border: none; display: block; background: #fff; }
+.preview-pdf { 
+    width: 100%; 
+    height: 140px; 
+    border: none; 
+    display: block; 
+    background: #fff; 
+    pointer-events: none;
+}
 .preview-video { width: 100%; height: 100px; display: block; background: #000; }
 
 .preview-generico { padding: 14px 10px; text-align: center; }
-.preview-generico .icono { font-size: 32px; display: flex; justify-content: center; align-items: center; }
+.preview-generico .icono { font-size: 32px; display: inline-flex; justify-content: center; align-items: center; }
 .preview-generico .icono svg { width: 32px; height: 32px; }
 .preview-generico .nombre { font-size: 11px; color: var(--tinta-soft); margin: 4px 0; word-break: break-all; }
 
@@ -585,7 +708,7 @@ th {
 .file-texto { display: flex; font-weight: 600; color: var(--tinta-soft); font-size: 13.5px; word-break: break-all; }
 .file-drop.tiene-archivo .file-texto { color: var(--verde-dark); }
 
-/* ==================== BOTÓN DESCARGAR (redondo) ==================== */
+/* ==================== BOTÓN DESCARGAR ==================== */
 .Btn {
     width: 28px;
     height: 28px;
@@ -603,9 +726,12 @@ th {
 }
 .svgIcon { fill: var(--tinta); }
 .icon2 { width: 12px; height: 3.5px; border-bottom: 1.5px solid var(--tinta); border-left: 1.5px solid var(--tinta); border-right: 1.5px solid var(--tinta); }
+
 .tooltip {
     position: absolute;
-    right: -105px;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
     opacity: 0;
     background-color: var(--tinta);
     color: white;
@@ -618,8 +744,19 @@ th {
     pointer-events: none;
     font-size: 12px;
     font-weight: 700;
+    white-space: nowrap;
 }
-.tooltip::before { position: absolute; content: ""; width: 10px; height: 10px; background-color: var(--tinta); transform: rotate(45deg); left: -5%; }
+.tooltip::before {
+    position: absolute;
+    content: "";
+    width: 8px;
+    height: 8px;
+    background-color: var(--tinta);
+    transform: rotate(45deg);
+    bottom: -4px;
+    left: 50%;
+    margin-left: -4px;
+}
 .Btn:hover .tooltip { opacity: 1; }
 .Btn:hover { background: var(--celeste-dark); transform: scale(1.08); }
 .Btn:hover .icon2 { border-color: var(--amarillo); }
@@ -683,7 +820,6 @@ th {
     0% { transform: scale(0); opacity: 0; }
     50% { transform: scaleY(1.2); }
 }
-
 
 /* ==================== RESALTADO ==================== */
 .apunte-resaltado {
@@ -792,7 +928,7 @@ th {
 }
 .kiroku-modal-overlay.visible .kiroku-modal { transform: rotate(0deg); }
 
-.kiroku-modal-icon { font-size: 36px; margin-bottom: 6px; display: flex; justify-content: center; align-items: center; }
+.kiroku-modal-icon { font-size: 36px; margin-bottom: 6px; display: inline-flex; justify-content: center; align-items: center; }
 .kiroku-modal-icon svg { width: 36px; height: 36px; }
 .kiroku-modal h3 { font-family: 'Kalam', cursive; font-size: 20px; margin: 0 0 8px; color: var(--tinta); }
 .kiroku-modal p { font-size: 14px; color: var(--tinta-soft); margin: 0 0 18px; line-height: 1.5; }
@@ -882,6 +1018,9 @@ th {
     .acciones .btn { flex: 1; min-width: 0; text-align: center; }
     .chart-wrap { max-width: 100%; }
     .chart-wrap canvas { width: 100% !important; height: auto !important; }
+    .curso-nombre { font-size: 19px; }
+    .curso-acciones { flex-direction: row; }
+    .btn-accion { flex: 1; text-align: center; padding: 6px 8px; font-size: 13px; }
 }
 
 @media (max-width: 480px) {
@@ -898,7 +1037,7 @@ th {
     .btn { font-size: 13px; padding: 8px 12px; min-height: 38px; }
     .btn-chico { font-size: 11px; padding: 5px 8px; min-height: 30px; }
     .campo label { font-size: 11px; }
-    .campo input, .campo select { padding: 10px 8px; font-size: 16px; }
+    .campo input, .campo select, .kiroku-modal .campo input { padding: 10px 8px; font-size: 16px; }
     .form-row { flex-direction: column; gap: 8px; }
     .form-row .campo { min-width: 0; }
     .preview-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
