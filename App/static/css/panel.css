@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    KIROKU · panel.css
    Estilos del panel: home, curso, materia, admin, perfil, stats
    ============================================================ */
@@ -1074,4 +1074,179 @@ th {
 
 @media (prefers-reduced-motion: reduce) {
     .doodles i, .doodles svg, .btn, .card, .toast { animation: none; transition: none; }
+}
+
+/* ==================== COMENTARIOS ==================== */
+
+.comentarios-bloque {
+    margin-top: 12px;
+    border-top: 1.5px dashed var(--borde);
+    padding-top: 10px;
+}
+
+.btn-comentarios {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border: 2px solid var(--borde);
+    border-radius: 20px;
+    background: var(--blanco);
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--tinta-soft);
+    transition: border-color var(--transicion), background var(--transicion), color var(--transicion);
+}
+.btn-comentarios:hover { border-color: var(--celeste); background: var(--celeste-light); color: var(--celeste-dark); }
+.btn-comentarios.abierto { border-color: var(--celeste-dark); background: var(--celeste-light); color: var(--celeste-dark); }
+
+.com-count {
+    background: var(--celeste-light);
+    color: var(--celeste-dark);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 12px;
+    font-weight: 800;
+    min-width: 22px;
+    text-align: center;
+}
+.btn-comentarios.abierto .com-count { background: var(--celeste-dark); color: var(--blanco); }
+
+.comentarios-panel {
+    margin-top: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1.5px solid var(--borde);
+    border-radius: var(--radio);
+}
+
+.comentarios-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 340px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+}
+.comentarios-lista::-webkit-scrollbar { width: 6px; }
+.comentarios-lista::-webkit-scrollbar-thumb { background: var(--borde); border-radius: 3px; }
+
+.comentario {
+    display: flex;
+    gap: 9px;
+    padding: 9px 11px;
+    background: var(--blanco);
+    border-radius: var(--radio);
+    border-left: 3px solid var(--celeste);
+    animation: comentario-in 0.22s ease;
+}
+.comentario-mio { border-left-color: var(--amarillo-dark); background: var(--amarillo-light); }
+
+@keyframes comentario-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.comentario .avatar-chico { width: 30px; height: 30px; }
+.comentario-cuerpo { flex: 1; min-width: 0; }
+
+.comentario-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-bottom: 3px;
+}
+.comentario-autor { font-size: 13px; color: var(--tinta); }
+.comentario-vos {
+    font-size: 10px;
+    font-weight: 800;
+    background: var(--amarillo);
+    color: var(--tinta);
+    padding: 1px 6px;
+    border-radius: 8px;
+    text-transform: uppercase;
+}
+.comentario-fecha { font-size: 11px; color: var(--tinta-soft); }
+.comentario-reportes {
+    font-size: 11px; font-weight: 800;
+    color: var(--rojo-dark); background: var(--rojo-light);
+    padding: 1px 6px; border-radius: 8px;
+}
+
+.comentario-texto {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--tinta);
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.comentario-borrar {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--tinta-soft);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 2px 5px;
+    border-radius: 4px;
+    transition: color var(--transicion), background var(--transicion);
+}
+.comentario-borrar:hover { color: var(--rojo-dark); background: var(--rojo-light); }
+
+.comentario-eliminado {
+    border-left-color: var(--borde);
+    background: rgba(0, 0, 0, 0.03);
+    padding: 7px 11px;
+}
+.comentario-tombstone { font-size: 12px; color: var(--tinta-soft); font-style: italic; }
+
+/* ---- Formulario ---- */
+.comentario-form { display: flex; flex-direction: column; gap: 6px; }
+
+.comentario-input {
+    width: 100%;
+    border: 2px solid var(--borde);
+    border-radius: var(--radio);
+    padding: 8px 10px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13.5px;
+    color: var(--tinta);
+    background: var(--blanco);
+    resize: none;
+    overflow-y: auto;
+    min-height: 40px;
+    max-height: 160px;
+    transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+.comentario-input:focus {
+    outline: none;
+    border-color: var(--celeste-dark);
+    box-shadow: 0 0 0 3px var(--celeste-light);
+}
+
+.comentario-form-pie {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.comentario-contador { font-size: 11px; color: var(--tinta-soft); font-weight: 700; }
+.comentario-contador.cerca-limite { color: var(--rojo-dark); }
+
+@media (max-width: 480px) {
+    .comentarios-panel { padding: 9px; }
+    .comentarios-lista { max-height: 260px; }
+    .comentario { padding: 7px 9px; gap: 7px; }
+    .comentario .avatar-chico { width: 26px; height: 26px; }
+    .comentario-texto { font-size: 13px; }
+    .comentario-input { font-size: 16px; }  /* evita zoom en iOS */
+    .comentario-form-pie { flex-direction: column; align-items: stretch; }
+    .comentario-form-pie .btn { width: 100%; }
+    .comentario-contador { text-align: right; }
 }

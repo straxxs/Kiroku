@@ -10,6 +10,11 @@ from modulos.auth import (
 from modulos.validacion import (
     validar_contraseña, validar_nombre_usuario, validar_email,
 )
+from modulos.comentarios import (
+    crear_comentario, listar_comentarios, obtener_comentario,
+    eliminar_comentario, contar_comentarios, reportar_comentario,
+    MAX_LONGITUD as COMENTARIO_MAX,
+)
 from modulos.cursos import (
     crear_curso, editar_curso, listar_cursos, eliminar_curso,
     obtener_curso, obtener_curso_por_codigo,
@@ -830,6 +835,133 @@ def pagina_guardados():
         return redirect(url_for("login_route"))
     return render_template("guardados.html", apuntes=listar_guardados(_usuario_actual()["id"]))
 
+# ====================== COMENTARIOS ======================
+
+@app.route("/apuntes/<int:id_apunte>/comentarios", methods=["GET"])
+def comentarios_listar(id_apunte):
+    """Comentarios de un apunte. Solo miembros del curso."""
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    try:
+        apunte = obtener_apunte(id_apunte)
+        if not apunte:
+            return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
+        if not es_miembro(apunte["id_curso"]):
+            return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
+
+        u = _usuario_actual()
+        es_mod = es_moderador_de(apunte["id_curso"])
+
+        comentarios = listar_comentarios(id_apunte, incluir_eliminados=es_mod)
+
+        # El backend decide quién puede borrar cada uno (el front NO decide)
+        for c in comentarios:
+            c["puede_eliminar"] = (
+                c["estado"] == "activo" and
+                (int(c["id_usuario"]) == int(u["id"]) or es_mod)
+            )
+            c["es_mio"] = int(c["id_usuario"]) == int(u["id"])
+            if not es_mod:
+                c.pop("reportes", None)
+
+        return jsonify({
+            "ok": True,
+            "comentarios": comentarios,
+            "total": sum(1 for c in comentarios if c["estado"] == "activo"),
+            "id_usuario": u["id"],
+            "es_moderador": es_mod,
+            "max_longitud": COMENTARIO_MAX,
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error interno: {type(e).__name__}"}), 500
+
+
+@app.route("/apuntes/<int:id_apunte>/comentarios", methods=["POST"])
+def comentarios_crear(id_apunte):
+    """Publica un comentario. Solo miembros del curso."""
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    try:
+        apunte = obtener_apunte(id_apunte)
+        if not apunte:
+            return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
+        if not es_miembro(apunte["id_curso"]):
+            return jsonify({"ok": False, "mensaje": "No pertenecés a este curso"}), 403
+
+        u = _usuario_actual()
+        contenido = request.form.get("contenido", "")
+
+        nuevo_id, error = crear_comentario(id_apunte, u["id"], contenido)
+        if not nuevo_id:
+            return jsonify({"ok": False, "mensaje": error}), 400
+
+        registrar_accion(u["id"], "comentario_creado",
+                         f"Comentario {nuevo_id} en apunte {id_apunte}", _ip_cliente())
+        return jsonify({"ok": True, "mensaje": "Comentario publicado",
+                        "id": nuevo_id, "total": contar_comentarios(id_apunte)})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error interno: {type(e).__name__}"}), 500
+
+
+@app.route("/comentarios/<int:id_comentario>/eliminar", methods=["POST"])
+def comentarios_eliminar(id_comentario):
+    """Elimina (soft) un comentario. Autor, moderador del curso o admin."""
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    try:
+        c = obtener_comentario(id_comentario)
+        if not c:
+            return jsonify({"ok": False, "mensaje": "El comentario no existe"}), 404
+        if c["estado"] == "eliminado":
+            return jsonify({"ok": False, "mensaje": "Ya estaba eliminado"}), 400
+
+        u = _usuario_actual()
+        es_autor = int(c["id_usuario"]) == int(u["id"]) and es_miembro(c["id_curso"])
+        if not (es_autor or es_moderador_de(c["id_curso"])):
+            return jsonify({"ok": False, "mensaje": "No podés eliminar este comentario"}), 403
+
+        if eliminar_comentario(id_comentario, u["id"]):
+            registrar_accion(u["id"], "comentario_eliminado",
+                             f"Comentario {id_comentario} (apunte {c['id_apunte']})", _ip_cliente())
+            return jsonify({"ok": True, "mensaje": "Comentario eliminado",
+                            "total": contar_comentarios(c["id_apunte"])})
+        return jsonify({"ok": False, "mensaje": "No se pudo eliminar"}), 500
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error interno: {type(e).__name__}"}), 500
+
+
+@app.route("/comentarios/<int:id_comentario>/reportar", methods=["POST"])
+def comentarios_reportar(id_comentario):
+    """Reporta un comentario. Base funcional — sin UI todavía."""
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    try:
+        c = obtener_comentario(id_comentario)
+        if not c or c["estado"] != "activo":
+            return jsonify({"ok": False, "mensaje": "Comentario no disponible"}), 404
+        if not es_miembro(c["id_curso"]):
+            return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
+
+        u = _usuario_actual()
+        if int(c["id_usuario"]) == int(u["id"]):
+            return jsonify({"ok": False, "mensaje": "No podés reportar tu propio comentario"}), 400
+
+        r = reportar_comentario(id_comentario, u["id"],
+                                request.form.get("motivo", "otro"),
+                                request.form.get("detalle"))
+        if r == "duplicado":
+            return jsonify({"ok": False, "mensaje": "Ya reportaste este comentario"}), 409
+        if r:
+            registrar_accion(u["id"], "comentario_reportado",
+                             f"Comentario {id_comentario}", _ip_cliente())
+            return jsonify({"ok": True, "mensaje": "Reporte enviado a los moderadores"})
+        return jsonify({"ok": False, "mensaje": "No se pudo enviar el reporte"}), 500
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error interno: {type(e).__name__}"}), 500
 
 # ====================== MODERACIÓN (RF-08) ======================
 

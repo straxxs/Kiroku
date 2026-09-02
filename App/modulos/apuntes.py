@@ -128,7 +128,23 @@ def listar_apuntes_por_materia(id_materia, id_usuario=None, solo_aprobados=True)
                 f"SELECT id_apunte, calificacion FROM Calificacion WHERE id_alumno=%s AND id_apunte IN ({ph})",
                 (id_usuario, *ids))
             calificaciones = {r["id_apunte"]: r["calificacion"] for r in cursor.fetchall()}
+            
+                    # ---- Contador de comentarios (batch, sin N+1) ----
+            cursor.execute(f"""
+                SELECT id_apunte, COUNT(*) AS cantidad
+                FROM comentario
+                WHERE id_apunte IN ({ph}) AND estado = 'activo'
+                GROUP BY id_apunte
+            """, ids)
+            comentarios_por_apunte = {r["id_apunte"]: r["cantidad"] for r in cursor.fetchall()}
 
+            for ap in apuntes:
+                ap["promedio"] = round(float(ap["promedio"]), 1)
+                ap["archivos"] = por_apunte.get(ap["id"], [])
+                ap["guardado"] = ap["id"] in guardados
+                ap["mi_calificacion"] = calificaciones.get(ap["id"], 0)
+                ap["cant_comentarios"] = comentarios_por_apunte.get(ap["id"], 0)   # 🆕
+            return apuntes
         for ap in apuntes:
             ap["promedio"] = round(float(ap["promedio"]), 1)
             ap["archivos"] = por_apunte.get(ap["id"], [])

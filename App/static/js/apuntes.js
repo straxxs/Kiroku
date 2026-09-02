@@ -162,7 +162,7 @@ function cargarApuntes() {
                         </label>
                         `;
 
-                const div = document.createElement("div");
+                                const div = document.createElement("div");
                 div.className = "card card-apunte";
                 div.id = `apunte-${a.id}`;
                 div.innerHTML = `
@@ -183,6 +183,9 @@ function cargarApuntes() {
                         </span>
                         ${btnGuardar}
                     </div>
+
+                    ${typeof bloqueComentarios === "function"
+                        ? bloqueComentarios(a.id, a.cant_comentarios || 0) : ""}
 
                     <div class="acciones" style="margin-top:10px;">
                         ${puedeBorrar
