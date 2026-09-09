@@ -49,6 +49,8 @@
                     <a href="/curso/{{ c.id }}">{{ c.anio }}° {{ c.division }}°</a>
                 {% endfor %}
             {% endif %}
+            <hr>
+            <a href="/calendario">Calendario</a>
             {% if rol == 'admin' %}<hr><a href="/admin">Panel admin</a>{% endif %}
             <hr>
             <a href="/logout" class="item-logout">Cerrar sesión</a>
@@ -138,6 +140,17 @@
         </form>
     </div>
 
+        <!-- ============ PRÓXIMOS EVENTOS ============ -->
+    <div class="card">
+        <div class="cal-cabecera">
+            <h2 style="margin:0;">📅 Próximos eventos</h2>
+            <a href="/calendario" class="btn btn-celeste btn-chico">Ver calendario</a>
+        </div>
+        <div id="proximosEventos" style="margin-top:12px;">
+            <p class="vacio">Cargando...</p>
+        </div>
+    </div>
+    
     <!-- ============ BÚSQUEDA POR CURSO ============ -->
     {% if cursos %}
     <div class="card">
@@ -187,15 +200,16 @@
     {% endif %}
 </div>
 
-<script src="{{ url_for('static', filename='js/icons.js') }}"></script>
-<script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
-<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
-<script src="{{ url_for('static', filename='js/api.js') }}"></script>
-<script src="{{ url_for('static', filename='js/topbar.js') }}"></script>
-<script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
-<script src="{{ url_for('static', filename='js/modal.js') }}"></script>
-<script src="{{ url_for('static', filename='js/busqueda.js') }}"></script>
-<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+<script src="{{ url_for('static', filename='js/icons.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/avatar.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/toast.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/api.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/topbar.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/sounds.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/modal.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/calendario.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/busqueda.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/home.js') }}?v=3"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script>lucide.createIcons();</script>
 </body>

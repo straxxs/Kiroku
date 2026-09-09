@@ -59,6 +59,12 @@ from modulos.gamificacion import (
     progreso_usuario, ranking as xp_ranking, historial as xp_historial,
     marcar_logros_vistos,
 )
+from modulos.calendario import (
+    obtener_eventos, proximos_eventos, obtener_evento,
+    crear_evento, editar_evento, eliminar_evento,
+    alternar_completado, validar_datos, materia_pertenece_a_curso,
+    TIPOS_VALIDOS, MAX_TITULO, MAX_DESCRIPCION,
+)
 from modulos.auditoria import registrar_accion
 
 app = Flask(__name__)
@@ -111,6 +117,14 @@ def requiere_admin():
 def _ip_cliente():
     return request.headers.get("X-Forwarded-For", request.remote_addr)
 
+def _contexto_calendario(id_usuario):
+    """(ids_cursos, ids_cursos_moderados) del usuario."""
+    cursos = listar_cursos_de_usuario(id_usuario)
+    ids = [c["id"] for c in cursos]
+    mods = [c["id"] for c in cursos if c.get("rol_curso") == "moderador"]
+    if _usuario_actual().get("rol") == "admin":
+        mods = ids
+    return ids, mods
 
 # ---------- PERMISOS MULTI-CURSO (siempre contra la BD) ----------
 
@@ -834,6 +848,7 @@ def buscar():
 def apunte_calificar(id_apunte):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    u = _usuario_actual()
     apunte = obtener_apunte(id_apunte)
     if not apunte:
         return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
@@ -880,6 +895,7 @@ def apunte_calificar(id_apunte):
 def apunte_guardar(id_apunte):
     if not requiere_login():
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    u = _usuario_actual()
     apunte = obtener_apunte(id_apunte)
     if not apunte:
         return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
@@ -1236,6 +1252,283 @@ def gamificacion_logros_vistos():
     marcar_logros_vistos(_usuario_actual()["id"])
     return jsonify({"ok": True})
 
+# ====================== CALENDARIO ======================
+
+@app.route("/calendario")
+def pagina_calendario():
+    if not requiere_login():
+        return redirect(url_for("login_route"))
+    u = _usuario_actual()
+    return render_template("calendario.html",
+                           cursos=listar_cursos_de_usuario(u["id"]),
+                           rol=u.get("rol"))
+
+
+@app.route("/calendario/eventos", methods=["GET"])
+def calendario_eventos():
+    """Eventos visibles en un rango. Mezcla todas las fuentes registradas."""
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado", "eventos": []}), 401
+    try:
+        u = _usuario_actual()
+        ids, mods = _contexto_calendario(u["id"])
+
+        filtros = {}
+        if request.args.get("id_curso"):
+            try:
+                id_curso = int(request.args["id_curso"])
+            except ValueError:
+                return jsonify({"ok": False, "mensaje": "Curso inválido"}), 400
+            if not es_miembro(id_curso):
+                return jsonify({"ok": False, "mensaje": "No pertenecés a este curso"}), 403
+            filtros["id_curso"] = id_curso
+
+        if request.args.get("id_materia"):
+            try:
+                id_mat = int(request.args["id_materia"])
+                m = obtener_materia(id_mat)
+                if m and es_miembro(m["id_curso"]):
+                    filtros["id_materia"] = id_mat
+            except ValueError:
+                pass
+
+        if request.args.get("tipo") in TIPOS_VALIDOS:
+            filtros["tipo"] = request.args["tipo"]
+        if request.args.get("ocultar_completados") == "1":
+            filtros["ocultar_completados"] = True
+
+        eventos = obtener_eventos(u["id"], ids, mods,
+                                  request.args.get("desde"),
+                                  request.args.get("hasta"),
+                                  filtros)
+        return jsonify({"ok": True, "eventos": eventos, "total": len(eventos)})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error interno: {type(e).__name__}",
+                        "eventos": []}), 500
+
+
+@app.route("/calendario/proximos", methods=["GET"])
+def calendario_proximos():
+    """Widget de inicio."""
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado", "eventos": []}), 401
+    try:
+        u = _usuario_actual()
+        ids, mods = _contexto_calendario(u["id"])
+        try:
+            limite = max(1, min(int(request.args.get("limite", 5)), 20))
+        except ValueError:
+            limite = 5
+        return jsonify({"ok": True,
+                        "eventos": proximos_eventos(u["id"], ids, mods, limite)})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": "Error interno", "eventos": []}), 500
+
+
+@app.route("/calendario/eventos/crear", methods=["POST"])
+def calendario_crear():
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    try:
+        u = _usuario_actual()
+        ambito = request.form.get("ambito", "personal")
+
+        ok, msg, datos = validar_datos(
+            request.form.get("titulo"), request.form.get("fecha"),
+            request.form.get("hora"), request.form.get("fecha_fin"),
+            request.form.get("descripcion"), request.form.get("tipo"), ambito)
+        if not ok:
+            return jsonify({"ok": False, "mensaje": msg}), 400
+
+        id_curso = id_materia = None
+
+        if datos["ambito"] == "curso":
+            raw = request.form.get("id_curso")
+            if not raw:
+                return jsonify({"ok": False,
+                                "mensaje": "Elegí el curso del evento"}), 400
+            try:
+                id_curso = int(raw)
+            except ValueError:
+                return jsonify({"ok": False, "mensaje": "Curso inválido"}), 400
+            # 🔒 Solo moderadores publican para todo el curso
+            if not es_moderador_de(id_curso):
+                return jsonify({"ok": False,
+                                "mensaje": "Solo un moderador puede crear eventos "
+                                           "para todo el curso"}), 403
+        elif request.form.get("id_curso"):
+            # Evento personal etiquetado con un curso propio
+            try:
+                id_curso = int(request.form["id_curso"])
+                if not es_miembro(id_curso):
+                    id_curso = None
+            except ValueError:
+                id_curso = None
+
+        if request.form.get("id_materia") and id_curso:
+            try:
+                id_materia = int(request.form["id_materia"])
+                if not materia_pertenece_a_curso(id_materia, id_curso):
+                    return jsonify({"ok": False,
+                                    "mensaje": "Esa materia no pertenece al curso"}), 400
+            except ValueError:
+                id_materia = None
+
+        nuevo_id, error = crear_evento(datos, u["id"], id_curso, id_materia)
+        if not nuevo_id:
+            return jsonify({"ok": False, "mensaje": error}), 500
+
+        registrar_accion(u["id"], "evento_creado",
+                         f"{datos['tipo']} '{datos['titulo']}' ({datos['fecha']})",
+                         _ip_cliente())
+
+        # 🎮 XP solo para eventos de curso (cap 3/día en la regla)
+        if datos["ambito"] == "curso":
+            try:
+                xp_otorgar(u["id"], "EVENTO_CURSO_CREADO",
+                           objeto=f"evento:{nuevo_id}", id_curso=id_curso)
+            except Exception as e:
+                print(f"[gamificacion] evento: {e}")
+
+        return jsonify({"ok": True, "mensaje": "Evento creado", "id": nuevo_id})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error interno: {type(e).__name__}"}), 500
+
+
+def _puede_gestionar_evento(ev, u):
+    """Autor, o moderador del curso si es un evento de curso."""
+    if int(ev["id_usuario_creador"]) == int(u["id"]):
+        return True
+    if ev["ambito"] == "curso" and ev["id_curso"]:
+        return es_moderador_de(ev["id_curso"])
+    return False
+
+
+@app.route("/calendario/eventos/<int:id_evento>/editar", methods=["POST"])
+def calendario_editar(id_evento):
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    try:
+        ev = obtener_evento(id_evento)
+        if not ev:
+            return jsonify({"ok": False, "mensaje": "El evento no existe"}), 404
+        if ev["origen_tipo"] != "manual":
+            return jsonify({"ok": False,
+                            "mensaje": "Este evento se edita desde su origen"}), 400
+
+        u = _usuario_actual()
+        if not _puede_gestionar_evento(ev, u):
+            return jsonify({"ok": False, "mensaje": "No podés editar este evento"}), 403
+
+        ambito = request.form.get("ambito", ev["ambito"])
+        ok, msg, datos = validar_datos(
+            request.form.get("titulo"), request.form.get("fecha"),
+            request.form.get("hora"), request.form.get("fecha_fin"),
+            request.form.get("descripcion"), request.form.get("tipo"), ambito)
+        if not ok:
+            return jsonify({"ok": False, "mensaje": msg}), 400
+
+        id_curso = ev["id_curso"]
+        if request.form.get("id_curso"):
+            try:
+                id_curso = int(request.form["id_curso"])
+            except ValueError:
+                pass
+        if datos["ambito"] == "curso":
+            if not id_curso or not es_moderador_de(id_curso):
+                return jsonify({"ok": False,
+                                "mensaje": "Solo un moderador puede publicar "
+                                           "para el curso"}), 403
+        elif id_curso and not es_miembro(id_curso):
+            id_curso = None
+
+        id_materia = None
+        if request.form.get("id_materia") and id_curso:
+            try:
+                id_materia = int(request.form["id_materia"])
+                if not materia_pertenece_a_curso(id_materia, id_curso):
+                    return jsonify({"ok": False,
+                                    "mensaje": "Esa materia no pertenece al curso"}), 400
+            except ValueError:
+                id_materia = None
+
+        if editar_evento(id_evento, datos, id_curso, id_materia):
+            registrar_accion(u["id"], "evento_editado",
+                             f"Evento ID: {id_evento}", _ip_cliente())
+            return jsonify({"ok": True, "mensaje": "Evento actualizado"})
+        return jsonify({"ok": False, "mensaje": "No se pudo actualizar"}), 500
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error interno: {type(e).__name__}"}), 500
+
+
+@app.route("/calendario/eventos/<int:id_evento>/eliminar", methods=["POST"])
+def calendario_eliminar(id_evento):
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    try:
+        ev = obtener_evento(id_evento)
+        if not ev:
+            return jsonify({"ok": False, "mensaje": "El evento no existe"}), 404
+        if ev["origen_tipo"] != "manual":
+            return jsonify({"ok": False,
+                            "mensaje": "Este evento se elimina desde su origen"}), 400
+
+        u = _usuario_actual()
+        if not _puede_gestionar_evento(ev, u):
+            return jsonify({"ok": False, "mensaje": "No podés eliminar este evento"}), 403
+
+        id_curso, autor = ev["id_curso"], ev["id_usuario_creador"]
+        if eliminar_evento(id_evento):
+            registrar_accion(u["id"], "evento_eliminado",
+                             f"Evento ID: {id_evento}", _ip_cliente())
+            # 🎮 Reversión: no se puede farmear creando y borrando eventos
+            if ev["ambito"] == "curso":
+                try:
+                    xp_revertir(autor, "EVENTO_CURSO_CREADO", f"evento:{id_evento}",
+                                meta="evento eliminado")
+                except Exception as e:
+                    print(f"[gamificacion] revertir evento: {e}")
+            return jsonify({"ok": True, "mensaje": "Evento eliminado"})
+        return jsonify({"ok": False, "mensaje": "No se pudo eliminar"}), 500
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error interno: {type(e).__name__}"}), 500
+
+
+@app.route("/calendario/eventos/<origen>/<int:origen_id>/completar", methods=["POST"])
+def calendario_completar(origen, origen_id):
+    """Marca/desmarca como completado. Individual por usuario."""
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    try:
+        u = _usuario_actual()
+
+        # Solo se puede marcar algo que el usuario efectivamente ve
+        if origen == "manual":
+            ev = obtener_evento(origen_id)
+            if not ev:
+                return jsonify({"ok": False, "mensaje": "El evento no existe"}), 404
+            visible = (int(ev["id_usuario_creador"]) == int(u["id"])
+                       or (ev["ambito"] == "curso" and ev["id_curso"]
+                           and es_miembro(ev["id_curso"])))
+            if not visible:
+                return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
+        elif origen not in ("tarea", "hito"):
+            return jsonify({"ok": False, "mensaje": "Origen no soportado"}), 400
+
+        r = alternar_completado(u["id"], origen, origen_id)
+        if r:
+            return jsonify({"ok": True, "estado": r,
+                            "mensaje": "¡Listo!" if r == "completado"
+                                       else "Marcado como pendiente"})
+        return jsonify({"ok": False, "mensaje": "No se pudo procesar"}), 500
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error interno: {type(e).__name__}"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

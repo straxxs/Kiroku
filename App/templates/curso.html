@@ -46,7 +46,11 @@
         <div id="perfilDropdown" class="dropdown-menu">
             <div class="dropdown-header">{{ nombre }}</div>
             <a href="/perfil">Mi perfil</a>
+            <hr>
+            <a href="/calendario">Calendario</a>
+            <hr>
             <a href="/home">Inicio</a>
+            <hr>
             {% if rol == 'admin' %}<a href="/admin">Panel admin</a>{% endif %}
             {% if rol == 'admin' %}<a href="/admin/estadisticas">Estadísticas</a>{% endif %}
             <hr>

@@ -69,6 +69,10 @@ METRICAS = {
     "xp_total": """
         SELECT IFNULL(xp_total, 0) FROM usuario_xp WHERE id_usuario = %s
     """,
+        "eventos_curso": """
+        SELECT COUNT(*) FROM evento
+        WHERE id_usuario_creador = %s AND ambito = 'curso' AND estado = 'activo'
+    """,
 }
 
 # Métricas que necesitan el id_usuario dos veces
