@@ -145,12 +145,30 @@
     </div>
 </div>
 
+    <!-- ============ PROGRESO / GAMIFICACIÓN ============ -->
+    <div class="card" style="margin-top:16px;">
+        <h2>Mi progreso</h2>
+        <div id="gamificacionPanel">
+            <p class="vacio">Cargando...</p>
+        </div>
+    </div>
+
+    <!-- ============ RANKING GLOBAL ============ -->
+    <div class="card" style="margin-top:16px;">
+        <h2>Ranking de colaboradores</h2>
+        <div id="rankingXP">
+            <p class="vacio">Cargando...</p>
+        </div>
+    </div>
+
+<script src="{{ url_for('static', filename='js/icons.js') }}"></script>
 <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
 <script src="{{ url_for('static', filename='js/topbar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
-<script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/gamificacion.js') }}"></script>
 <script src="{{ url_for('static', filename='js/perfil.js') }}"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script>lucide.createIcons();</script>
 </body>
 </html>

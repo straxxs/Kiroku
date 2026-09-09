@@ -52,6 +52,13 @@ from modulos.estadisticas import (
     stats_curso_materias, stats_curso_ranking,
     stats_curso_por_fecha, stats_curso_top_valorados,
 )
+from modulos.gamificacion import (
+    otorgar as xp_otorgar,
+    revertir as xp_revertir,
+    registrar_actividad_diaria,
+    progreso_usuario, ranking as xp_ranking, historial as xp_historial,
+    marcar_logros_vistos,
+)
 from modulos.auditoria import registrar_accion
 
 app = Flask(__name__)
@@ -135,6 +142,18 @@ def puede_ver_materia(id_curso):
 def es_mi_curso(id_curso):
     return es_moderador_de(id_curso)
 
+def _xp_apunte_aprobado(id_autor, id_apunte, id_curso, id_materia):
+    """XP por apunte aprobado + bonus si es el primero de esa materia."""
+    try:
+        xp_otorgar(id_autor, "APUNTE_APROBADO", objeto=f"apunte:{id_apunte}",
+                   id_curso=id_curso)
+        # Bonus único por materia
+        xp_otorgar(id_autor, "PRIMER_APUNTE_MATERIA",
+                   objeto=f"materia:{id_materia}", id_curso=id_curso)
+    except Exception as e:
+        print(f"[gamificacion] apunte aprobado: {e}")
+
+
 
 @app.context_processor
 def inyectar_usuario():
@@ -211,6 +230,10 @@ def login_route():
         if usuario:
             token = generar_token_jwt(usuario)
             registrar_accion(usuario["id"], "login", "Inicio de sesión", _ip_cliente())
+            try:
+                registrar_actividad_diaria(usuario["id"]) 
+            except Exception as e:
+                print(f"[gamificacion] login: {e}")
             resp = make_response(jsonify({
                 "ok": True,
                 "mensaje": f"¡Bienvenido {usuario['nombre']}!",
@@ -414,6 +437,12 @@ def perfil_actualizar():
 
     if actualizar_perfil(u["id"], nombre, avatar_ruta):
         registrar_accion(u["id"], "perfil_actualizado", f"Nombre: {nombre}", _ip_cliente())
+        try:
+            fresco = obtener_usuario(u["id"])
+            if fresco and fresco.get("avatar") and fresco.get("email"):
+                xp_otorgar(u["id"], "PERFIL_COMPLETO")                    # 🎮 +5 único
+        except Exception as e:
+            print(f"[gamificacion] perfil: {e}")
         resp = jsonify({"ok": True, "mensaje": "Perfil actualizado"})
         return _cookie_token(resp, _refrescar_token(u["id"]))
     return jsonify({"ok": False, "mensaje": "No se pudo actualizar (¿el nombre ya existe?)"})
@@ -521,6 +550,11 @@ def cursos_crear():
     if resultado:
         registrar_accion(u["id"], "curso_creado",
                          f"Curso {anio}°{division}° (ID: {resultado['id']})", _ip_cliente())
+        try:
+            xp_otorgar(u["id"], "CURSO_CREADO", objeto=f"curso:{resultado['id']}",
+                       id_curso=resultado["id"])                          # 🎮 +10
+        except Exception as e:
+            print(f"[gamificacion] curso: {e}")
         return jsonify({"ok": True, "mensaje": "¡Curso creado! Sos moderador de este curso.",
                         "id": resultado["id"], "codigo": resultado["codigo"]})
     return jsonify({"ok": False, "mensaje": "Error al crear el curso"}), 500
@@ -724,6 +758,7 @@ def apuntes_crear():
 
     registrar_accion(u["id"], "apunte_creado", f"Apunte '{titulo}' (ID: {id_apunte})", _ip_cliente())
     if rol_efectivo in ("moderador", "admin"):
+        _xp_apunte_aprobado(u["id"], id_apunte, materia["id_curso"], id_materia)
         return jsonify({"ok": True, "mensaje": "¡Apunte subido y publicado!", "id": id_apunte})
     return jsonify({"ok": True, "mensaje": "¡Apunte subido! Queda pendiente de aprobación.", "id": id_apunte})
 
@@ -741,8 +776,15 @@ def apuntes_eliminar(id_apunte):
     if not (es_autor or es_moderador_de(apunte["id_curso"])):
         return jsonify({"ok": False, "mensaje": "No podés borrar este apunte"}), 403
 
+    id_autor = apunte["id_usuario_creador"]
     if eliminar_apunte(id_apunte, UPLOAD_APUNTES):
         registrar_accion(u["id"], "apunte_eliminado", f"Apunte ID: {id_apunte}", _ip_cliente())
+        # 🎮 Si estaba aprobado, se devuelve el XP: no se puede farmear subiendo/borrando
+        try:
+            xp_revertir(id_autor, "APUNTE_APROBADO", f"apunte:{id_apunte}",
+                        meta="apunte eliminado")
+        except Exception as e:
+            print(f"[gamificacion] revertir apunte: {e}")
         return jsonify({"ok": True, "mensaje": "Apunte eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
@@ -803,8 +845,31 @@ def apunte_calificar(id_apunte):
     except (TypeError, ValueError):
         return jsonify({"ok": False, "mensaje": "Calificación inválida"}), 400
 
-    if calificar_apunte(_usuario_actual()["id"], id_apunte, estrellas):
+    if calificar_apunte(u["id"], id_apunte, estrellas):
         promedio, cantidad = obtener_promedio(id_apunte)
+
+        # 🎮 Gamificación de valoraciones
+        try:
+            autor = apunte["id_usuario_creador"]
+            curso = apunte["id_curso"]
+
+            # +2 al que valora (no cuenta si es su propio apunte)
+            xp_otorgar(u["id"], "VALORAR_APUNTE", objeto=f"apunte:{id_apunte}",
+                       id_curso=curso, actor=autor)
+
+            clave = f"apunte:{id_apunte}|de:{u['id']}"
+            if estrellas >= 4:
+                # Si antes había dado nota baja, se anula esa penalización
+                xp_revertir(autor, "VALORACION_BAJA_RECIBIDA", clave, meta="cambió su voto")
+                xp_otorgar(autor, "VALORACION_ALTA_RECIBIDA", objeto=clave,
+                           id_curso=curso, actor=u["id"])
+            elif estrellas <= 2:
+                xp_revertir(autor, "VALORACION_ALTA_RECIBIDA", clave, meta="cambió su voto")
+                xp_otorgar(autor, "VALORACION_BAJA_RECIBIDA", objeto=clave,
+                           id_curso=curso, actor=u["id"])
+        except Exception as e:
+            print(f"[gamificacion] calificar: {e}")
+
         return jsonify({"ok": True, "mensaje": "¡Gracias por tu valoración!",
                         "promedio": promedio, "cantidad": cantidad,
                         "mi_calificacion": estrellas})
@@ -821,10 +886,23 @@ def apunte_guardar(id_apunte):
     if not es_miembro(apunte["id_curso"]):
         return jsonify({"ok": False, "mensaje": "Sin acceso"}), 403
 
-    resultado = alternar_guardado(_usuario_actual()["id"], id_apunte)
+    resultado = alternar_guardado(u["id"], id_apunte)
+    autor = apunte["id_usuario_creador"]
+    clave = f"apunte:{id_apunte}|por:{u['id']}"
+
     if resultado == "guardado":
+        try:
+            xp_otorgar(autor, "GUARDADO_RECIBIDO", objeto=clave,
+                       id_curso=apunte["id_curso"], actor=u["id"])          # 🎮 +4
+        except Exception as e:
+            print(f"[gamificacion] guardar: {e}")
         return jsonify({"ok": True, "mensaje": "Apunte guardado", "estado": "guardado"})
+
     if resultado == "quitado":
+        try:
+            xp_revertir(autor, "GUARDADO_RECIBIDO", clave, meta="desguardado")  # 🎮 −4
+        except Exception as e:
+            print(f"[gamificacion] desguardar: {e}")
         return jsonify({"ok": True, "mensaje": "Apunte quitado de guardados", "estado": "quitado"})
     return jsonify({"ok": False, "mensaje": "No se pudo procesar"})
 
@@ -898,6 +976,13 @@ def comentarios_crear(id_apunte):
 
         registrar_accion(u["id"], "comentario_creado",
                          f"Comentario {nuevo_id} en apunte {id_apunte}", _ip_cliente())
+        try:
+            xp_otorgar(u["id"], "COMENTARIO_PUBLICADO",
+                       objeto=f"comentario:{nuevo_id}",
+                       id_curso=apunte["id_curso"])       # 🎮 +3 (cap 5/día, cooldown 60s)
+        except Exception as e:
+            print(f"[gamificacion] comentario: {e}")
+
         return jsonify({"ok": True, "mensaje": "Comentario publicado",
                         "id": nuevo_id, "total": contar_comentarios(id_apunte)})
     except Exception as e:
@@ -925,6 +1010,13 @@ def comentarios_eliminar(id_comentario):
         if eliminar_comentario(id_comentario, u["id"]):
             registrar_accion(u["id"], "comentario_eliminado",
                              f"Comentario {id_comentario} (apunte {c['id_apunte']})", _ip_cliente())
+            try:
+                if int(c["id_usuario"]) != int(u["id"]):
+                    xp_otorgar(c["id_usuario"], "COMENTARIO_MODERADO",
+                               objeto=f"comentario:{id_comentario}",
+                               id_curso=c["id_curso"], actor=u["id"])   # 🎮 −5
+            except Exception as e:
+                print(f"[gamificacion] comentario moderado: {e}")
             return jsonify({"ok": True, "mensaje": "Comentario eliminado",
                             "total": contar_comentarios(c["id_apunte"])})
         return jsonify({"ok": False, "mensaje": "No se pudo eliminar"}), 500
@@ -989,8 +1081,19 @@ def apunte_rechazar(id_apunte):
     if not es_moderador_de(apunte["id_curso"]):
         return jsonify({"ok": False, "mensaje": "No podés moderar este apunte"}), 403
 
+    id_autor  = apunte["id_usuario_creador"]
+    id_curso  = apunte["id_curso"]
+
     if eliminar_apunte(id_apunte, UPLOAD_APUNTES):
-        registrar_accion(_usuario_actual()["id"], "apunte_rechazado", f"Apunte ID: {id_apunte}", _ip_cliente())
+        u = _usuario_actual()
+        registrar_accion(u["id"], "apunte_rechazado", f"Apunte ID: {id_apunte}", _ip_cliente())
+        try:
+            xp_otorgar(id_autor, "APUNTE_RECHAZADO", objeto=f"apunte:{id_apunte}",
+                       id_curso=id_curso)                                  # 🎮 −10
+            xp_otorgar(u["id"], "MODERAR_APUNTE", objeto=f"apunte:{id_apunte}",
+                       id_curso=id_curso, actor=id_autor)                  # 🎮 +2
+        except Exception as e:
+            print(f"[gamificacion] rechazar: {e}")
         return jsonify({"ok": True, "mensaje": "Apunte rechazado y eliminado"})
     return jsonify({"ok": False, "mensaje": "No se pudo eliminar"})
 
@@ -1003,8 +1106,21 @@ def _moderar_apunte(id_apunte, estado):
         return jsonify({"ok": False, "mensaje": "El apunte no existe"}), 404
     if not es_moderador_de(apunte["id_curso"]):
         return jsonify({"ok": False, "mensaje": "No podés moderar este apunte"}), 403
+
     if cambiar_estado_apunte(id_apunte, estado):
-        registrar_accion(_usuario_actual()["id"], f"apunte_{estado}", f"Apunte ID: {id_apunte}", _ip_cliente())
+        u = _usuario_actual()
+        registrar_accion(u["id"], f"apunte_{estado}", f"Apunte ID: {id_apunte}", _ip_cliente())
+
+        # 🎮 XP para el autor + XP para el moderador
+        try:
+            if estado == "aprobado":
+                _xp_apunte_aprobado(apunte["id_usuario_creador"], id_apunte,
+                                    apunte["id_curso"], apunte["id_materia"])
+            xp_otorgar(u["id"], "MODERAR_APUNTE", objeto=f"apunte:{id_apunte}",
+                       id_curso=apunte["id_curso"], actor=apunte["id_usuario_creador"])
+        except Exception as e:
+            print(f"[gamificacion] moderar: {e}")
+
         return jsonify({"ok": True, "mensaje": f"Apunte {estado}"})
     return jsonify({"ok": False, "mensaje": "No se pudo actualizar"})
 
@@ -1071,6 +1187,54 @@ def admin_stats():
         "por_estado": apuntes_por_estado(),
         "por_fecha": apuntes_por_fecha(),
     })
+
+# ====================== GAMIFICACIÓN (solo lectura) ======================
+
+@app.route("/gamificacion/mi-progreso", methods=["GET"])
+def gamificacion_mi_progreso():
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    try:
+        u = _usuario_actual()
+        return jsonify({"ok": True, "progreso": progreso_usuario(u["id"])})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "mensaje": f"Error: {type(e).__name__}"}), 500
+
+
+@app.route("/gamificacion/historial", methods=["GET"])
+def gamificacion_historial():
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    u = _usuario_actual()
+    return jsonify({"ok": True, "eventos": xp_historial(u["id"], 30)})
+
+
+@app.route("/gamificacion/ranking", methods=["GET"])
+def gamificacion_ranking():
+    """Ranking global o por curso (?id_curso=N). Valida pertenencia."""
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    raw = request.args.get("id_curso")
+    id_curso = None
+    if raw:
+        try:
+            id_curso = int(raw)
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "mensaje": "Curso inválido"}), 400
+        if not es_miembro(id_curso):
+            return jsonify({"ok": False, "mensaje": "No pertenecés a este curso"}), 403
+    return jsonify({"ok": True, "ranking": xp_ranking(id_curso, 20),
+                    "ambito": "curso" if id_curso else "global"})
+
+
+@app.route("/gamificacion/logros-vistos", methods=["POST"])
+def gamificacion_logros_vistos():
+    """Marca los logros como vistos. NO otorga XP — solo apaga la notificación."""
+    if not requiere_login():
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+    marcar_logros_vistos(_usuario_actual()["id"])
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":
