@@ -21,6 +21,19 @@ function htmlPreview(f) {
 
     // Imagen -> thumbnail + lightbox
     if (EXT_IMG.includes(tipo)) {
+        let bloqueTexto = "";
+        if (f.texto_transcripto) {
+            bloqueTexto = `
+                <details class="preview-transcripcion">
+                    <summary>📝 Ver texto transcripto</summary>
+                    <p>${escapeHtml(f.texto_transcripto).replace(/\n/g, "<br>")}</p>
+                </details>`;
+        } else {
+            bloqueTexto = `
+                <p class="preview-transcripcion-pendiente">
+                    📝 Generando transcripción... (puede tardar un rato)
+                </p>`;
+        }
         return `
             <div class="preview-item">
                 <img class="preview-img" src="${url}" alt="imagen"
@@ -35,6 +48,7 @@ function htmlPreview(f) {
                     </button>
                     </a>
                 </div>
+                ${bloqueTexto}
             </div>`;
     }
 
@@ -238,6 +252,10 @@ if (formApunte) {
                     fileTexto.textContent = "Elegí archivos o arrastralos acá";
                     fileDrop.classList.remove("tiene-archivo");
                     cargarApuntes();
+                    // La transcripción OCR corre en segundo plano y tarda
+                    // unos segundos — refrescamos una vez más para que
+                    // aparezca sin que el usuario tenga que recargar.
+                    setTimeout(cargarApuntes, 15000);
                 }
             })
             .catch(() => mostrarToast("Error de conexión", "error"));

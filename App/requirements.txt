@@ -4,3 +4,5 @@ bcrypt
 PyJWT
 werkzeug
 gunicorn
+requests
+ 

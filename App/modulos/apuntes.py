@@ -76,7 +76,7 @@ def apunte_pertenece_a_cursos(ruta_archivo, ids_cursos):
 
 def _traer_archivos(cursor, apuntes):
     for ap in apuntes:
-        cursor.execute("SELECT id, ruta, tipo FROM Archivo_Apunte WHERE id_apunte = %s", (ap["id"],))
+        cursor.execute("SELECT id, ruta, tipo, texto_transcripto FROM Archivo_Apunte WHERE id_apunte = %s", (ap["id"],))
         ap["archivos"] = cursor.fetchall()
     return apuntes
 
@@ -111,11 +111,12 @@ def listar_apuntes_por_materia(id_materia, id_usuario=None, solo_aprobados=True)
 
         # Archivos en un solo query
         cursor.execute(
-            f"SELECT id, ruta, tipo, id_apunte FROM Archivo_Apunte WHERE id_apunte IN ({ph})", ids)
+            f"SELECT id, ruta, tipo, texto_transcripto, id_apunte FROM Archivo_Apunte WHERE id_apunte IN ({ph})", ids)
         por_apunte = {}
         for f in cursor.fetchall():
             por_apunte.setdefault(f["id_apunte"], []).append(
-                {"id": f["id"], "ruta": f["ruta"], "tipo": f["tipo"]})
+                {"id": f["id"], "ruta": f["ruta"], "tipo": f["tipo"],
+                 "texto_transcripto": f["texto_transcripto"]})
 
         guardados, calificaciones = set(), {}
         if id_usuario:
@@ -251,6 +252,27 @@ def eliminar_apunte(id_apunte, carpeta_apuntes):
         return borrado
     except Exception as e:
         print(f"Error al eliminar apunte: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def actualizar_texto_transcripto(id_archivo, texto):
+    """Guarda el texto que la IA de OCR leyó de una imagen de apunte."""
+    conn = obtener_conexion()
+    if not conn:
+        return False
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE Archivo_Apunte SET texto_transcripto = %s WHERE id = %s",
+            (texto, id_archivo),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        print(f"Error al guardar texto transcripto: {e}")
         conn.rollback()
         return False
     finally:

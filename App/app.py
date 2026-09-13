@@ -67,6 +67,10 @@ from modulos.calendario import (
 )
 from modulos.auditoria import registrar_accion
 
+import threading
+import modulos.transcriptor as transcriptor
+ 
+EXTENSIONES_IMAGEN_OCR = {"png", "jpg", "jpeg"}
 app = Flask(__name__)
 app.secret_key = os.environ.get("KIROKU_SECRET_KEY", "kiroku_secret_key_2026_mitin_fallback")
 
@@ -766,9 +770,18 @@ def apuntes_crear():
 
     for archivo in archivos:
         nombre_seguro = secure_filename(f"apunte{id_apunte}_{archivo.filename}")
-        archivo.save(os.path.join(UPLOAD_APUNTES, nombre_seguro))
+        ruta_absoluta = os.path.join(UPLOAD_APUNTES, nombre_seguro)
+        archivo.save(ruta_absoluta)
         tipo = archivo.filename.rsplit(".", 1)[1].lower()
-        agregar_archivo_apunte(id_apunte, f"uploads/apuntes/{nombre_seguro}", tipo)
+        id_archivo = agregar_archivo_apunte(id_apunte, f"uploads/apuntes/{nombre_seguro}", tipo)
+ 
+        
+        if id_archivo and tipo in EXTENSIONES_IMAGEN_OCR:
+            threading.Thread(
+                target=transcriptor.transcribir_y_guardar,
+                args=(id_archivo, ruta_absoluta),
+                daemon=True,
+            ).start()
 
     registrar_accion(u["id"], "apunte_creado", f"Apunte '{titulo}' (ID: {id_apunte})", _ip_cliente())
     if rol_efectivo in ("moderador", "admin"):

@@ -325,6 +325,48 @@ svg.luc-star.big { width: 1.4em; height: 1.4em; }
 .card-apunte h3 { margin: 4px 0 !important; font-size: 16px !important; }
 .card-apunte p { margin: 2px 0; font-size: 13px; }
 
+/* Transcripción OCR de imágenes de apuntes */
+.preview-transcripcion {
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.preview-transcripcion summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--celeste-dark);
+    padding: 8px 12px;
+    background: var(--fondo-panel, #f0f4f8);
+    border-bottom: 1px solid var(--borde, #e0e0e0);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.preview-transcripcion p {
+    padding: 12px;
+    margin: 0;
+    background: var(--fondo-panel, #f8fafc);
+    color: var(--tinta, #333);
+    white-space: pre-wrap;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 13px;
+}
+
+.preview-transcripcion-pendiente {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: var(--fondo-panel, #fff8e1);
+    border-radius: 6px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--tinta-soft);
+    border-left: 3px solid var(--celeste, #4a90d9);
+}
+
 /* Grillas de apuntes / resultados */
 #listaApuntes,
 #resultadosBusqueda {
@@ -643,18 +685,19 @@ th {
     border-radius: var(--radio);
     overflow: hidden;
     background: var(--crema);
-    width: 170px;
+    flex: 1 1 200px;
+    max-width: 260px;
 }
-.preview-img { width: 100%; height: 100px; object-fit: cover; cursor: zoom-in; display: block; }
+.preview-img { width: 100%; height: 160px; object-fit: cover; object-position: center; cursor: zoom-in; display: block; }
 .preview-pdf { 
     width: 100%; 
-    height: 140px; 
+    height: 160px; 
     border: none; 
     display: block; 
     background: #fff; 
     pointer-events: none;
 }
-.preview-video { width: 100%; height: 100px; display: block; background: #000; }
+.preview-video { width: 100%; height: 140px; display: block; background: #000; }
 
 .preview-generico { padding: 14px 10px; text-align: center; }
 .preview-generico .icono { font-size: 32px; display: inline-flex; justify-content: center; align-items: center; }
@@ -995,8 +1038,8 @@ th {
     #listaApuntes, #resultadosBusqueda { grid-template-columns: 1fr; }
     .form-row { gap: 10px; }
     .preview-grid { gap: 8px; }
-    .preview-item { width: 140px; }
-    .preview-img { height: 90px; }
+    .preview-item { flex: 1 1 160px; max-width: 220px; }
+    .preview-img { height: 120px; }
     .preview-pdf { height: 130px; }
     .avatar-grid { grid-template-columns: repeat(4, 1fr); }
     .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -1042,7 +1085,7 @@ th {
     .form-row .campo { min-width: 0; }
     .preview-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
     .preview-item { width: 100%; }
-    .preview-img { max-height: 80px; }
+    .preview-img { max-height: 100px; }
     .preview-pdf { height: 110px; }
     .avatar-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .stats-grid { grid-template-columns: 1fr 1fr; gap: 6px; }

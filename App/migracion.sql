@@ -5,7 +5,7 @@
 
 -- 1. Agregar columna email a usuario
 ALTER TABLE `usuario`
-  ADD COLUMN `email` VARCHAR(255) DEFAULT NULL AFTER `nombre`;
+  ADD COLUMN IF NOT EXISTS `email` VARCHAR(255) DEFAULT NULL AFTER `nombre`;
 
 -- 2. Tabla de "Me Gusta" (likes)
 CREATE TABLE IF NOT EXISTS `me_gusta` (
