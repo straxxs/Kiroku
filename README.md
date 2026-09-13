@@ -201,10 +201,9 @@ Proyecto Mitingay/
 
 ## Equipo
 
-- **León Veraldi Rita** (Líder técnico)
+- **Matías Hayes** (Líder técnico)
 - Lucas Hamlin
 - Vito Martin
-- Matías Hayes
 - Thiago Montenegro
 - Ramiro Tatone
 - Santino Moauro
